@@ -88,3 +88,39 @@ def test_last_fetch_reports_when_the_source_last_delivered(conn):
     assert db.last_fetch(conn, "90minut") is None
     db.store_matches(conn, [match()], "90minut", NOW)
     assert db.last_fetch(conn, "90minut") == NOW
+
+
+def test_a_source_without_a_score_does_not_erase_one(conn):
+    # futbolowo lists yesterday's match with an empty score cell while 90minut
+    # already has 3-1. The later scrape must not wipe the result.
+    db.store_matches(
+        conn, [match(home_score=3, away_score=1, status="finished")], "90minut", NOW
+    )
+    db.store_matches(conn, [match()], "futbolowo", NOW)
+
+    stored = list(db.stored_matches(conn).values())[0]
+    assert (stored.home_score, stored.away_score, stored.status) == (3, 1, "finished")
+
+
+def test_a_source_without_a_league_name_does_not_erase_one(conn):
+    db.store_matches(conn, [match()], "90minut", NOW)
+    db.store_matches(conn, [match(competition="")], "futbolowo", NOW)
+
+    assert list(db.stored_matches(conn).values())[0].competition == "VI liga"
+
+
+def test_articles_are_recorded_so_they_are_never_refetched(conn):
+    from dynovia.models import MatchReport
+
+    db.store_matches(conn, [match()], "90minut", NOW)
+    report = MatchReport(
+        url="https://example/news/article/x",
+        title="Zwycięstwo",
+        published_at=None,
+        text="Dynovia: Bielaszka",
+        match=match().key,
+    )
+    db.store_reports(conn, [report], "futbolowo", NOW)
+
+    assert db.seen_articles(conn, "futbolowo") == {report.url}
+    assert db.seen_articles(conn, "90minut") == set()

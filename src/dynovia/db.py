@@ -11,7 +11,7 @@ import datetime as dt
 import sqlite3
 
 from dynovia.config import DB_PATH
-from dynovia.models import MatchData, MatchKey, normalize_team
+from dynovia.models import MatchData, MatchKey, MatchReport, normalize_team
 
 SCHEMA = """
 PRAGMA journal_mode = WAL;
@@ -109,6 +109,16 @@ CREATE TABLE IF NOT EXISTS cards (
     PRIMARY KEY (match_id, player_id, color, source)
 );
 
+CREATE TABLE IF NOT EXISTS articles (
+    url          TEXT    PRIMARY KEY,
+    source       TEXT    NOT NULL,
+    title        TEXT    NOT NULL,
+    published_at TEXT,
+    match_id     INTEGER REFERENCES matches(id),   -- NULL: not tied to a match
+    text         TEXT    NOT NULL,
+    fetched_at   TEXT    NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS notifications_sent (
     match_id INTEGER NOT NULL REFERENCES matches(id),
     kind     TEXT    NOT NULL,
@@ -175,11 +185,15 @@ VALUES (:season, :home_key, :away_key, :date, :time, :competition,
 ON CONFLICT (season, home_key, away_key) DO UPDATE SET
     date        = COALESCE(NULLIF(excluded.date, ''), matches.date),
     time        = COALESCE(NULLIF(excluded.time, ''), matches.time),
-    competition = excluded.competition,
+    competition = COALESCE(NULLIF(excluded.competition, ''), matches.competition),
     round       = excluded.round,
-    home_score  = excluded.home_score,
-    away_score  = excluded.away_score,
-    status      = excluded.status,
+    home_score  = COALESCE(excluded.home_score, matches.home_score),
+    away_score  = COALESCE(excluded.away_score, matches.away_score),
+    status      = CASE
+                    WHEN excluded.home_score IS NULL AND matches.home_score IS NOT NULL
+                    THEN matches.status
+                    ELSE excluded.status
+                  END,
     venue       = COALESCE(excluded.venue, matches.venue),
     updated_at  = excluded.updated_at
 """
@@ -203,9 +217,11 @@ def store_matches(
 ) -> None:
     """Upsert matches and record which source last saw each of them.
 
-    date and time are coalesced because they get filled in over the season and a
-    later scrape that still lacks them must not wipe what we already know.
-    Scores and status are taken as given, so a correction at the source wins.
+    Everything here follows one rule: a source that knows less must not erase
+    what is already known. futbolowo lists yesterday's match with no score yet,
+    and without the COALESCE it would wipe the 3-1 that 90minut already
+    reported. A source that has a different value still overwrites - telling
+    those two cases apart is merge.py's job, not the writer's.
     """
     stamp = fetched_at.isoformat()
     with conn:
@@ -270,3 +286,47 @@ def unmark_sent(conn: sqlite3.Connection, match_id: int, kind: str) -> None:
             "DELETE FROM notifications_sent WHERE match_id = ? AND kind = ?",
             (match_id, kind),
         )
+
+
+def seen_articles(conn: sqlite3.Connection, source: str) -> set[str]:
+    """Urls already downloaded. A futbolowo article is a couple of megabytes and
+    never changes, so it is fetched exactly once."""
+    return {
+        row["url"]
+        for row in conn.execute("SELECT url FROM articles WHERE source = ?", (source,))
+    }
+
+
+def store_reports(
+    conn: sqlite3.Connection,
+    reports: list[MatchReport],
+    source: str,
+    fetched_at: dt.datetime,
+) -> None:
+    """Keep every article, including the ones that turned out not to be match
+    reports - that is what stops them being downloaded again next run. Reports
+    that could not be tied to a match are kept with match_id NULL rather than
+    dropped, so they can be matched by hand instead of vanishing."""
+    ids = match_ids(conn)
+    with conn:
+        for report in reports:
+            conn.execute(
+                """
+                INSERT INTO articles (url, source, title, published_at, match_id,
+                                      text, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (url) DO UPDATE SET
+                    match_id   = COALESCE(excluded.match_id, articles.match_id),
+                    text       = excluded.text,
+                    fetched_at = excluded.fetched_at
+                """,
+                (
+                    report.url,
+                    source,
+                    report.title,
+                    report.published_at.isoformat() if report.published_at else None,
+                    ids.get(report.match) if report.match else None,
+                    report.text,
+                    fetched_at.isoformat(),
+                ),
+            )

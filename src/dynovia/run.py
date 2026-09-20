@@ -61,20 +61,23 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
     events: list[differ.Event] = []
     for name, scraper_cls in SCRAPERS.items():
         known = db.stored_matches(conn)
+        scraper = scraper_cls(seen=db.seen_articles(conn, name))
         try:
             if offline:
-                result = scraper_cls().parse(load_fixtures(name))
+                result = scraper.parse(load_fixtures(name))
             elif not is_due(db.last_fetch(conn, name), known.values(), now):
                 log.info("%s: not due yet", name)
                 continue
             else:
-                result = scraper_cls().fetch()
+                result = scraper.fetch()
         except Exception:  # noqa: BLE001 - one dead source must not kill the run
             log.exception("%s: scrape failed", name)
             continue
         log.info("%s: %d matches", name, len(result.matches))
         events += differ.diff(known, result.matches, now)
         db.store_matches(conn, result.matches, result.source, result.fetched_at)
+        if result.reports:
+            db.store_reports(conn, result.reports, result.source, result.fetched_at)
     return events
 
 

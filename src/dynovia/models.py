@@ -43,6 +43,16 @@ def normalize_team(name: str) -> str:
     return _NON_ALNUM.sub(" ", _TEAM_NOISE.sub(" ", ascii_only)).strip()
 
 
+def season_for(date: dt.date) -> str:
+    """Calendar date -> the season label sources print, e.g. "2026/27".
+
+    Polish football runs July to June. 90minut prints the label outright; the
+    other sources do not, so they derive it here and land on the same MatchKey.
+    """
+    start = date.year if date.month >= 7 else date.year - 1
+    return f"{start}/{(start + 1) % 100:02d}"
+
+
 def normalize_player(name: str) -> str:
     """Player name reduced to a comparison key. Alias resolution proper ('M. Bak'
     vs 'Bak Mateusz') lands in merge.py in phase 3 - this is only the cheap part."""
@@ -112,6 +122,10 @@ class TableRow:
 class MatchReport:
     """Raw prose of a match report. Assists are mined from this in phase 5."""
 
-    match: MatchKey
     url: str
+    title: str
+    published_at: dt.datetime | None
     text: str
+    match: MatchKey | None = None
+    """None when the report could not be tied to a match with confidence. It is
+    still stored, so it can be matched by hand rather than silently dropped."""

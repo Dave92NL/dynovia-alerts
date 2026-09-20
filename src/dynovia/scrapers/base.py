@@ -14,6 +14,7 @@ import datetime as dt
 import hashlib
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -79,8 +80,12 @@ class Scraper(ABC):
 
     headers: dict[str, str] = DEFAULT_HEADERS
 
-    def __init__(self) -> None:
+    def __init__(self, seen: Iterable[str] = ()) -> None:
         self._last_request = 0.0
+        self.seen = frozenset(seen)
+        """Urls already downloaded and stored in an earlier run. Sources whose
+        detail pages never change - match reports, PZPN protocols - use this to
+        avoid refetching them forever."""
 
     # --- to implement in a subclass -------------------------------------------
 

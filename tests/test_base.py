@@ -34,3 +34,11 @@ class _SilentSource(Scraper):
 def test_empty_primary_list_is_an_error_not_an_empty_schedule():
     with pytest.raises(ScraperError):
         _SilentSource().fetch()
+
+
+def test_confirmed_club_aliases_join_the_two_spellings():
+    # 90minut and futbolowo spell this club differently and no rule bridges
+    # them, so without the alias round 13 would land as two separate matches.
+    assert normalize_team("Stobierna Krzywe") == normalize_team(
+        "Stobierna-Krzywe Stobierna"
+    )

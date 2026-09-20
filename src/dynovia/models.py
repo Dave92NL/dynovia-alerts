@@ -35,12 +35,22 @@ _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 _STROKED_L = str.maketrans({"ł": "l", "Ł": "l"})
 
 
+# Clubs whose spellings no rule can reconcile. 90minut writes
+# "Stobierna-Krzywe Stobierna" where futbolowo writes "Stobierna Krzywe";
+# confirmed as one club by the user on 2026-09-20. Thirteen of the fifteen
+# teams in the league need no entry here at all.
+TEAM_ALIASES = {
+    "stobierna krzywe": "stobierna krzywe stobierna",
+}
+
+
 def normalize_team(name: str) -> str:
     """'LKS Dynovia Dynow' and 'Dynovia Dynow' both become 'dynovia dynow'."""
     folded = name.casefold().translate(_STROKED_L)
     decomposed = unicodedata.normalize("NFKD", folded)
     ascii_only = "".join(c for c in decomposed if not unicodedata.combining(c))
-    return _NON_ALNUM.sub(" ", _TEAM_NOISE.sub(" ", ascii_only)).strip()
+    key = _NON_ALNUM.sub(" ", _TEAM_NOISE.sub(" ", ascii_only)).strip()
+    return TEAM_ALIASES.get(key, key)
 
 
 def season_for(date: dt.date) -> str:

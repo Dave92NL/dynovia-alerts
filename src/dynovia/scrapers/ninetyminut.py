@@ -77,7 +77,7 @@ def _is_our_match(home: str, away: str) -> bool:
     return any("dynovia" in normalize_team(team) for team in (home, away))
 
 
-def parse_matches(html: str) -> list[MatchData]:
+def parse_matches(html: str, season: str) -> list[MatchData]:
     matches = []
     for row in HTMLParser(html).css("tr"):
         cells = [cell.text(strip=True) for cell in row.css("td")]
@@ -91,6 +91,7 @@ def parse_matches(html: str) -> list[MatchData]:
         home_score, away_score, status = _parse_score(score)
         matches.append(
             MatchData(
+                season=season,
                 date=date,
                 time=kickoff,
                 competition=competition,
@@ -119,4 +120,5 @@ class NinetyMinut(Scraper):
         }
 
     def parse(self, pages: dict[str, str]) -> ScrapeResult:
-        return self.new_result(matches=parse_matches(pages["matches"]))
+        _, season = latest_season(pages["seasons"])
+        return self.new_result(matches=parse_matches(pages["matches"], season))

@@ -17,9 +17,16 @@ MatchStatus = Literal["scheduled", "live", "finished", "postponed"]
 GoalType = Literal["normal", "penalty", "own"]
 CardColor = Literal["yellow", "second_yellow", "red"]
 
-# (date, normalized home, normalized away) - the natural key that joins the same
+# (season, normalized home, normalized away) - the natural key that joins the same
 # match across sources. Every source has its own ids, so ids cannot do this job.
-MatchKey = tuple[dt.date, str, str]
+#
+# Not the date: late rounds are published without one and gain it later, which
+# would turn one match into two rows. Not the competition either: 90minut calls
+# it "VI liga" where futbolowo calls it "Klasa A", so it does not travel between
+# sources. Within one season an ordered pair of teams meets exactly once.
+# ponytail: a cup tie between the same pair in the same season would collide -
+# add the competition tier to the key if that ever actually happens.
+MatchKey = tuple[str, str, str]
 
 # Club-type prefixes that some sources print and others drop.
 _TEAM_NOISE = re.compile(r"\b(ks|lks|uks|mks|gks|kks|zks|ludowy|klub|sportowy)\b")
@@ -47,6 +54,7 @@ def normalize_player(name: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class MatchData:
+    season: str  # "2026/27", as the source labels it
     # Both optional: 90minut lists late rounds with no date and no kickoff yet.
     date: dt.date | None
     time: dt.time | None
@@ -62,7 +70,7 @@ class MatchData:
 
     @property
     def key(self) -> MatchKey:
-        return (self.date, normalize_team(self.home), normalize_team(self.away))
+        return (self.season, normalize_team(self.home), normalize_team(self.away))
 
 
 @dataclass(frozen=True, slots=True)

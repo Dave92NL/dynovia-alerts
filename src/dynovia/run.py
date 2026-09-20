@@ -13,7 +13,8 @@ import datetime as dt
 import logging
 import sys
 
-from dynovia import db, differ
+from dynovia import db, differ, players
+from dynovia.config import ROSTER_PATH
 from dynovia.differ import WARSAW, kickoff
 from dynovia.notify import telegram
 from dynovia.scrapers import SCRAPERS
@@ -62,6 +63,9 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
     # the first would otherwise see a populated database and report the gaps
     # they fill as news, so the whole run stays silent, not just source one.
     first_run = not db.stored_matches(conn)
+    registry = players.load_roster(ROSTER_PATH)
+    if not registry:
+        log.warning("kadra.txt is empty - player names cannot be resolved yet")
     events: list[differ.Event] = []
     for name, scraper_cls in SCRAPERS.items():
         known = db.stored_matches(conn)
@@ -81,6 +85,9 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
         conflicts = db.store_matches(
             conn, result.matches, result.source, result.fetched_at
         )
+        conflicts += db.store_lineups(conn, result.lineups, result.source, registry)
+        conflicts += db.store_goals(conn, result.goals, result.source, registry)
+        conflicts += db.store_cards(conn, result.cards, result.source, registry)
         if not first_run:
             # Diff the merged view before against the merged view after, never
             # the raw source view: regiowyniki reporting 11.10 while 90minut

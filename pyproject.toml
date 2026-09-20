@@ -22,3 +22,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The system temp directory is not writable here, so tmp_path lives in-project.
+addopts = "--basetemp=.pytest-tmp"

@@ -12,9 +12,15 @@ from __future__ import annotations
 import datetime as dt
 import sqlite3
 
-from dynovia import merge
+from dynovia import merge, players
 from dynovia.config import DB_PATH
-from dynovia.models import MatchData, MatchKey, MatchReport, normalize_team
+from dynovia.models import (
+    MatchData,
+    MatchKey,
+    MatchReport,
+    normalize_player,
+    normalize_team,
+)
 
 SCHEMA = """
 PRAGMA journal_mode = WAL;
@@ -102,9 +108,16 @@ CREATE TABLE IF NOT EXISTS goals (
     player_id INTEGER NOT NULL REFERENCES players(id),
     minute    INTEGER,
     type      TEXT    NOT NULL DEFAULT 'normal',   -- normal|penalty|own
-    source    TEXT    NOT NULL,
-    UNIQUE (match_id, player_id, minute, source)
+    source    TEXT    NOT NULL
 );
+
+-- COALESCE, not a plain UNIQUE: futbolowo reports scorers without a minute and
+-- SQLite treats every NULL as distinct, so a plain constraint would let the
+-- same goal back in on every single run.
+-- ponytail: two goals by one player in one match, both minuteless, collapse
+-- into one. Without minutes there is nothing to tell them apart anyway.
+CREATE UNIQUE INDEX IF NOT EXISTS goals_once
+    ON goals (match_id, player_id, source, COALESCE(minute, -1));
 
 CREATE TABLE IF NOT EXISTS assists (
     id        INTEGER PRIMARY KEY,
@@ -405,3 +418,119 @@ def store_reports(
                     fetched_at.isoformat(),
                 ),
             )
+
+
+def _player_id(conn: sqlite3.Connection, name: str) -> int:
+    conn.execute(
+        "INSERT OR IGNORE INTO players (name, normalized_name) VALUES (?, ?)",
+        (name, normalize_player(name)),
+    )
+    return conn.execute(
+        "SELECT id FROM players WHERE normalized_name = ?", (normalize_player(name),)
+    ).fetchone()["id"]
+
+
+def _identify(
+    conn: sqlite3.Connection,
+    written: str,
+    source: str,
+    registry: dict[str, str],
+) -> tuple[int | None, merge.Conflict | None]:
+    """A written name -> a player, or a question for the user.
+
+    An already-answered spelling is remembered in player_aliases, so the same
+    question is never asked twice.
+    """
+    row = conn.execute(
+        "SELECT player_id FROM player_aliases WHERE alias = ? AND source = ?",
+        (normalize_player(written), source),
+    ).fetchone()
+    if row:
+        return row["player_id"], None
+
+    name, candidates = players.resolve(written, registry)
+    if name is None:
+        return None, merge.Conflict(
+            field="zawodnik",
+            source_a=source,
+            value_a=written,
+            source_b="kadra",
+            value_b=", ".join(candidates),
+        )
+
+    player_id = _player_id(conn, name)
+    conn.execute(
+        "INSERT OR IGNORE INTO player_aliases (player_id, alias, source)"
+        " VALUES (?, ?, ?)",
+        (player_id, normalize_player(written), source),
+    )
+    return player_id, None
+
+
+def _store_player_rows(
+    conn: sqlite3.Connection,
+    rows,
+    source: str,
+    registry: dict[str, str],
+    statement: str,
+    columns,
+) -> list[tuple[int, merge.Conflict]]:
+    """Shared plumbing for lineups, goals and cards: resolve the player, then
+    write. A row whose player cannot be identified is not written at all -
+    a wrong attribution is worse than a missing one, and the question goes out
+    on Telegram instead."""
+    ids = match_ids(conn)
+    found: list[tuple[int, merge.Conflict]] = []
+    with conn:
+        for row in rows:
+            match_id = ids.get(row.match)
+            if match_id is None:
+                continue
+            player_id, conflict = _identify(conn, row.player, source, registry)
+            if conflict is not None:
+                found.append((match_id, conflict))
+                continue
+            conn.execute(
+                statement,
+                (match_id, player_id, *(getattr(row, column) for column in columns), source),
+            )
+    return found
+
+
+def store_lineups(conn, lineups, source, registry) -> list[tuple[int, merge.Conflict]]:
+    return _store_player_rows(
+        conn,
+        lineups,
+        source,
+        registry,
+        "INSERT INTO appearances (match_id, player_id, started, minute_in,"
+        " minute_out, source) VALUES (?, ?, ?, ?, ?, ?)"
+        " ON CONFLICT (match_id, player_id, source) DO UPDATE SET"
+        " started = excluded.started, minute_in = excluded.minute_in,"
+        " minute_out = excluded.minute_out",
+        ("started", "minute_in", "minute_out"),
+    )
+
+
+def store_goals(conn, goals, source, registry) -> list[tuple[int, merge.Conflict]]:
+    return _store_player_rows(
+        conn,
+        goals,
+        source,
+        registry,
+        "INSERT OR IGNORE INTO goals (match_id, player_id, minute, type, source)"
+        " VALUES (?, ?, ?, ?, ?)",
+        ("minute", "type"),
+    )
+
+
+def store_cards(conn, cards, source, registry) -> list[tuple[int, merge.Conflict]]:
+    return _store_player_rows(
+        conn,
+        cards,
+        source,
+        registry,
+        "INSERT OR IGNORE INTO cards (match_id, player_id, minute, color, source)"
+        " VALUES (?, ?, ?, ?, ?)",
+        ("minute", "color"),
+    )

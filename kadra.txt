@@ -1,0 +1,40 @@
+# Kadra Dynovii Dynów - jeden zawodnik w linii, imię i nazwisko.
+# Podana przez właściciela 2026-09-20, za stroną klubu.
+#
+# Do tego pliku dopasowywane są nazwiska ze składów i list strzelców.
+# Nazwisko, które nie pasuje jednoznacznie, NIE jest zgadywane - bot zapyta
+# na Telegramie, kto to jest. Dlatego obaj Golesiowie i obaj Szczepańscy
+# muszą tu być osobno.
+#
+# Sztab szkoleniowy celowo pominięty - trener i kierownicy nie wchodzą
+# do statystyk zawodników.
+
+# bramkarze
+Tomasz Bielaszka
+Dominik Goleniowski
+Sebastian Urbaniak
+
+# obrońcy i pomocnicy
+Andrzej Goleś
+Arkadiusz Kłoda
+Filip Goleś
+Grzegorz Szczepański
+Jakob Dzik
+Jakub Bury
+Jakub Ćwikła
+Jakub Uryć
+Karol Stankiewicz
+Krystian Skubisz
+Michael Londono Silva
+Patryk Duchniak
+Paweł Szczawiński
+Ruslan Kovtok
+Sebastian Kustra
+Łukasz Kozioł
+
+# napastnicy
+Kamil Socha
+Przemysław Barnaś
+Rafał Szczepański
+Sylwester Paszko
+Wojciech Mnich

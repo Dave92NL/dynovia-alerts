@@ -6,3 +6,4 @@ __pycache__/
 *.egg-info/
 data/*.db-wal
 data/*.db-shm
+.pytest-tmp/

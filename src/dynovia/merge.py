@@ -30,6 +30,15 @@ TRUST: dict[str, tuple[str, ...]] = {
     "competition": ("regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
 }
 
+GOAL_TRUST = ("podkarpacielive", "laczynaspilka", "futbolowo")
+"""Whose scorer list to believe, most trusted first.
+
+The plan put futbolowo first. Measured against the PZPN protocol it is the
+least reliable of the three: for the Grom match it recorded Dynovia's second
+goal as an own goal, where both podkarpacielive and the protocol name Filip
+Goleś in the 42nd minute. podkarpacielive also gives minutes, which the others
+either lack or publish days later."""
+
 SILENT = frozenset({"competition"})
 """Fields where the sources differ by convention rather than by mistake. The
 league is "VI liga" on 90minut and "Klasa A" on regiowyniki for every single
@@ -52,6 +61,9 @@ class Conflict:
     value_b: str
 
     def describe(self) -> str:
+        if self.field == "zawodnik":
+            fits = self.value_b or "nikt z kadry"
+            return f"kto to jest \"{self.value_a}\" ({self.source_a})? Pasuje: {fits}"
         if self.source_a == self.source_b:
             # One source contradicting itself, which reads badly as "x A, x B".
             return f"{self.source_a} ({self.field}): {self.value_a} / {self.value_b}"

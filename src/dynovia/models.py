@@ -28,6 +28,10 @@ CardColor = Literal["yellow", "second_yellow", "red"]
 # add the competition tier to the key if that ever actually happens.
 MatchKey = tuple[str, str, str]
 
+CLUB = "Dynovia Dynów"
+"""The one club this app is about. Sources that print the score from its point
+of view need the name to reconstruct who was at home."""
+
 # Club-type prefixes that some sources print and others drop.
 _TEAM_NOISE = re.compile(r"\b(ks|lks|uks|mks|gks|kks|zks|ludowy|klub|sportowy)\b")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")

@@ -25,6 +25,8 @@ def test_missing_dropdown_is_an_error(pages):
 
 
 def test_full_season_schedule_is_parsed(pages):
+    # 28, not 30: the league has an odd number of teams and Dynovia sits out
+    # rounds 15 and 30, so those rounds are absent from the club's fixture list.
     assert len(parse_matches(pages["matches"])) == 28
 
 

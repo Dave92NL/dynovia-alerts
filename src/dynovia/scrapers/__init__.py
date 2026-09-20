@@ -3,10 +3,12 @@
 from dynovia.scrapers.base import Scraper, ScraperError, ScrapeResult
 from dynovia.scrapers.futbolowo import Futbolowo
 from dynovia.scrapers.ninetyminut import NinetyMinut
+from dynovia.scrapers.regiowyniki import Regiowyniki
 
 SCRAPERS: dict[str, type[Scraper]] = {
     NinetyMinut.name: NinetyMinut,
     Futbolowo.name: Futbolowo,
+    Regiowyniki.name: Regiowyniki,
 }
 
 __all__ = ["SCRAPERS", "Scraper", "ScraperError", "ScrapeResult"]

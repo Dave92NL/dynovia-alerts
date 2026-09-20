@@ -58,6 +58,10 @@ def is_due(last: dt.datetime | None, matches, now: dt.datetime) -> bool:
 
 
 def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
+    # A first run pulls a whole season from every source at once. Sources after
+    # the first would otherwise see a populated database and report the gaps
+    # they fill as news, so the whole run stays silent, not just source one.
+    first_run = not db.stored_matches(conn)
     events: list[differ.Event] = []
     for name, scraper_cls in SCRAPERS.items():
         known = db.stored_matches(conn)
@@ -74,10 +78,43 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
             log.exception("%s: scrape failed", name)
             continue
         log.info("%s: %d matches", name, len(result.matches))
-        events += differ.diff(known, result.matches, now)
-        db.store_matches(conn, result.matches, result.source, result.fetched_at)
+        conflicts = db.store_matches(
+            conn, result.matches, result.source, result.fetched_at
+        )
+        if not first_run:
+            # Diff the merged view before against the merged view after, never
+            # the raw source view: regiowyniki reporting 11.10 while 90minut
+            # wins with 10.10 must not produce a message the database
+            # contradicts.
+            events += differ.diff(known, list(db.stored_matches(conn).values()), now)
+            events += _conflict_events(conn, conflicts)
         if result.reports:
             db.store_reports(conn, result.reports, result.source, result.fetched_at)
+    return events
+
+
+def _conflict_events(conn, conflicts) -> list[differ.Event]:
+    """A disagreement between sources is never settled quietly - merge.py picks
+    a value so the app has something to show, and this puts the question in
+    front of the user."""
+    if not conflicts:
+        return []
+    keys = {match_id: key for key, match_id in db.match_ids(conn).items()}
+    events = []
+    for match_id, conflict in conflicts:
+        match = db.stored_matches(conn)[keys[match_id]]
+        events.append(
+            differ.Event(
+                match=keys[match_id],
+                # The values are part of the kind: a second, different
+                # disagreement about the same field has to alert again.
+                kind=f"conflict:{conflict.field}:{conflict.value_a}:{conflict.value_b}",
+                text=(
+                    f"⚠️ Rozbieżność: {match.home} – {match.away}\n"
+                    f"{conflict.describe()}\nSprawdź, które źródło ma rację."
+                ),
+            )
+        )
     return events
 
 

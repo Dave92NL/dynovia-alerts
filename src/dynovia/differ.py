@@ -1,8 +1,7 @@
 """Turns "what changed since the last run" into messages worth sending.
 
-Only the events reachable with the sources built so far live here. Phase 3 adds
-lineup_available, protocol_available and conflict_detected, which all need a
-second source to exist first.
+Conflicts between sources are raised in run.py, where merge.py reports them.
+lineup_available and protocol_available follow once lineups are stored.
 
 Kickoff times are Europe/Warsaw; GitHub Actions runs on UTC, so every comparison
 goes through an aware datetime rather than a naive local one.
@@ -58,11 +57,15 @@ def diff(
                 )
             continue
         if match.date and (before.date, before.time) != (match.date, match.time):
-            # Late rounds arrive dateless and get a date later; that is a date
-            # being announced, not a fixture being moved.
-            first_time = before.date is None
-            kind = "time_set" if first_time else "time_changed"
-            label = "📅 Termin wyznaczony" if first_time else "🕐 Zmiana terminu"
+            # Three different things wear the same shape. A dateless round
+            # getting a date is an announcement; a dated round getting its
+            # kickoff is a second announcement; only an actual move is a move.
+            if before.date is None:
+                kind, label = "time_set", "📅 Termin wyznaczony"
+            elif before.date == match.date and before.time is None:
+                kind, label = "time_set", "🕐 Godzina wyznaczona"
+            else:
+                kind, label = "time_changed", "🕐 Zmiana terminu"
             events.append(
                 Event(
                     match.key,

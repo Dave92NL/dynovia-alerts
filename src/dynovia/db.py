@@ -1,8 +1,10 @@
 """SQLite storage. Plain sqlite3, no ORM - one writer, one reader, one user.
 
-Every table holding match data carries a `source` column. The scrapers do not
-repeat it on each record; it is stamped in here from ScrapeResult.source, which
-is what makes conflicts resolvable and bad data traceable later.
+The shape that matters: `match_sources` holds what each source said, verbatim
+and per source, and `matches` holds the merged view the app shows. Nothing
+writes to `matches` from a single source - it is recomputed by merge.py every
+time a source delivers, so the displayed value never depends on which scraper
+happened to run last.
 """
 
 from __future__ import annotations
@@ -10,6 +12,7 @@ from __future__ import annotations
 import datetime as dt
 import sqlite3
 
+from dynovia import merge
 from dynovia.config import DB_PATH
 from dynovia.models import MatchData, MatchKey, MatchReport, normalize_team
 
@@ -24,7 +27,7 @@ CREATE TABLE IF NOT EXISTS matches (
     away_key    TEXT    NOT NULL,
     date        TEXT    NOT NULL DEFAULT '',   -- '' until the round is scheduled
     time        TEXT    NOT NULL DEFAULT '',
-    competition TEXT    NOT NULL,
+    competition TEXT    NOT NULL DEFAULT '',
     round       INTEGER,
     home        TEXT    NOT NULL,
     away        TEXT    NOT NULL,
@@ -36,11 +39,23 @@ CREATE TABLE IF NOT EXISTS matches (
     UNIQUE (season, home_key, away_key)
 );
 
+-- What one source said, untouched. This is the audit trail that makes a
+-- conflict resolvable and a wrong value traceable back to whoever reported it.
 CREATE TABLE IF NOT EXISTS match_sources (
     match_id    INTEGER NOT NULL REFERENCES matches(id),
     source      TEXT    NOT NULL,
     external_id TEXT,
-    raw_score   TEXT,
+    season      TEXT    NOT NULL,
+    date        TEXT    NOT NULL DEFAULT '',
+    time        TEXT    NOT NULL DEFAULT '',
+    competition TEXT    NOT NULL DEFAULT '',
+    round       INTEGER,
+    home        TEXT    NOT NULL,
+    away        TEXT    NOT NULL,
+    home_score  INTEGER,
+    away_score  INTEGER,
+    status      TEXT    NOT NULL,
+    venue       TEXT,
     fetched_at  TEXT    NOT NULL,
     PRIMARY KEY (match_id, source)
 );
@@ -127,6 +142,30 @@ CREATE TABLE IF NOT EXISTS notifications_sent (
 );
 """
 
+_MATCH_VALUES = (
+    ":season, :home_key, :away_key, :date, :time, :competition, :round, "
+    ":home, :away, :home_score, :away_score, :status, :venue, :updated_at"
+)
+_MATCH_COLUMNS = (
+    "season, home_key, away_key, date, time, competition, round, home, away, "
+    "home_score, away_score, status, venue, updated_at"
+)
+_SOURCE_COLUMNS = (
+    "match_id, source, external_id, season, date, time, competition, round, "
+    "home, away, home_score, away_score, status, venue, fetched_at"
+)
+_SOURCE_VALUES = (
+    ":match_id, :source, :external_id, :season, :date, :time, :competition, "
+    ":round, :home, :away, :home_score, :away_score, :status, :venue, :fetched_at"
+)
+_SOURCE_UPDATES = ", ".join(
+    f"{column} = excluded.{column}"
+    for column in (
+        "external_id date time competition round home away home_score "
+        "away_score status venue fetched_at"
+    ).split()
+)
+
 
 def connect(path=DB_PATH) -> sqlite3.Connection:
     if path != ":memory:":
@@ -152,10 +191,12 @@ def _to_row(match: MatchData) -> dict:
         "away_score": match.away_score,
         "status": match.status,
         "venue": match.venue,
+        "external_id": match.external_id,
     }
 
 
 def _from_row(row: sqlite3.Row) -> MatchData:
+    columns = row.keys()
     return MatchData(
         season=row["season"],
         date=dt.date.fromisoformat(row["date"]) if row["date"] else None,
@@ -168,45 +209,8 @@ def _from_row(row: sqlite3.Row) -> MatchData:
         away_score=row["away_score"],
         status=row["status"],
         venue=row["venue"],
+        external_id=row["external_id"] if "external_id" in columns else None,
     )
-
-
-def _raw_score(match: MatchData) -> str | None:
-    if match.home_score is None or match.away_score is None:
-        return None
-    return f"{match.home_score}-{match.away_score}"
-
-
-_UPSERT_MATCH = """
-INSERT INTO matches (season, home_key, away_key, date, time, competition,
-    round, home, away, home_score, away_score, status, venue, updated_at)
-VALUES (:season, :home_key, :away_key, :date, :time, :competition,
-    :round, :home, :away, :home_score, :away_score, :status, :venue, :updated_at)
-ON CONFLICT (season, home_key, away_key) DO UPDATE SET
-    date        = COALESCE(NULLIF(excluded.date, ''), matches.date),
-    time        = COALESCE(NULLIF(excluded.time, ''), matches.time),
-    competition = COALESCE(NULLIF(excluded.competition, ''), matches.competition),
-    round       = excluded.round,
-    home_score  = COALESCE(excluded.home_score, matches.home_score),
-    away_score  = COALESCE(excluded.away_score, matches.away_score),
-    status      = CASE
-                    WHEN excluded.home_score IS NULL AND matches.home_score IS NOT NULL
-                    THEN matches.status
-                    ELSE excluded.status
-                  END,
-    venue       = COALESCE(excluded.venue, matches.venue),
-    updated_at  = excluded.updated_at
-"""
-
-_UPSERT_SOURCE = """
-INSERT INTO match_sources (match_id, source, external_id, raw_score, fetched_at)
-VALUES ((SELECT id FROM matches
-         WHERE season = ? AND home_key = ? AND away_key = ?), ?, ?, ?, ?)
-ON CONFLICT (match_id, source) DO UPDATE SET
-    external_id = excluded.external_id,
-    raw_score   = excluded.raw_score,
-    fetched_at  = excluded.fetched_at
-"""
 
 
 def store_matches(
@@ -214,32 +218,93 @@ def store_matches(
     matches: list[MatchData],
     source: str,
     fetched_at: dt.datetime,
-) -> None:
-    """Upsert matches and record which source last saw each of them.
+) -> list[tuple[int, merge.Conflict]]:
+    """Record this source's view of each match and recompute the merged row.
 
-    Everything here follows one rule: a source that knows less must not erase
-    what is already known. futbolowo lists yesterday's match with no score yet,
-    and without the COALESCE it would wipe the 3-1 that 90minut already
-    reported. A source that has a different value still overwrites - telling
-    those two cases apart is merge.py's job, not the writer's.
+    Returns every disagreement found, so the caller can alert on it. `matches`
+    is never written from one source alone: it is always the merge of every
+    source that has spoken about that match.
     """
     stamp = fetched_at.isoformat()
+    found: list[tuple[int, merge.Conflict]] = []
+    first_seen: dict[MatchKey, MatchData] = {}
     with conn:
         for match in matches:
-            row = _to_row(match) | {"updated_at": stamp}
-            conn.execute(_UPSERT_MATCH, row)
+            row = _to_row(match)
+            match_id = _ensure_match(conn, row, stamp)
+            if match.key in first_seen:
+                # The same source listed one fixture twice, which means it
+                # disagrees with the others about who is at home - regiowyniki
+                # puts Dynovia at home in round 16 where 90minut puts Dąbrówki.
+                # Home and away are part of the key, so merge.py cannot see
+                # this; keeping the first row and asking is the honest move.
+                found.append((match_id, _duplicate(source, first_seen[match.key], match)))
+                continue
+            first_seen[match.key] = match
             conn.execute(
-                _UPSERT_SOURCE,
-                (
-                    row["season"],
-                    row["home_key"],
-                    row["away_key"],
-                    source,
-                    match.external_id,
-                    _raw_score(match),
-                    stamp,
-                ),
+                f"INSERT INTO match_sources ({_SOURCE_COLUMNS})"
+                f" VALUES ({_SOURCE_VALUES})"
+                f" ON CONFLICT (match_id, source) DO UPDATE SET {_SOURCE_UPDATES}",
+                row | {"match_id": match_id, "source": source, "fetched_at": stamp},
             )
+            found += [(match_id, c) for c in _remerge(conn, match_id, stamp)]
+    return found
+
+
+def _duplicate(source: str, first: MatchData, again: MatchData) -> merge.Conflict:
+    return merge.Conflict(
+        field="gospodarz",
+        source_a=source,
+        value_a=f"{first.home} – {first.away} ({first.date or 'bez daty'})",
+        source_b=source,
+        value_b=f"ten sam mecz ponownie ({again.date or 'bez daty'})",
+    )
+
+
+def _ensure_match(conn: sqlite3.Connection, row: dict, stamp: str) -> int:
+    conn.execute(
+        f"INSERT INTO matches ({_MATCH_COLUMNS}) VALUES ({_MATCH_VALUES})"
+        " ON CONFLICT (season, home_key, away_key) DO NOTHING",
+        row | {"updated_at": stamp},
+    )
+    return conn.execute(
+        "SELECT id FROM matches WHERE season = ? AND home_key = ? AND away_key = ?",
+        (row["season"], row["home_key"], row["away_key"]),
+    ).fetchone()["id"]
+
+
+def _remerge(
+    conn: sqlite3.Connection, match_id: int, stamp: str
+) -> list[merge.Conflict]:
+    views = {
+        row["source"]: _from_row(row)
+        for row in conn.execute(
+            "SELECT * FROM match_sources WHERE match_id = ?", (match_id,)
+        )
+    }
+    merged, conflicts = merge.merge(views)
+    conn.execute(
+        "UPDATE matches SET date = :date, time = :time, competition = :competition,"
+        " round = :round, home = :home, away = :away, home_score = :home_score,"
+        " away_score = :away_score, status = :status, venue = :venue,"
+        " updated_at = :updated_at WHERE id = :id",
+        _to_row(merged) | {"id": match_id, "updated_at": stamp},
+    )
+    for conflict in conflicts:
+        conn.execute(
+            "INSERT OR IGNORE INTO conflicts (match_id, field, source_a, value_a,"
+            " source_b, value_b, detected_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                match_id,
+                conflict.field,
+                conflict.source_a,
+                conflict.value_a,
+                conflict.source_b,
+                conflict.value_b,
+                stamp,
+            ),
+        )
+    return conflicts
 
 
 def stored_matches(conn: sqlite3.Connection) -> dict[MatchKey, MatchData]:
@@ -254,6 +319,16 @@ def match_ids(conn: sqlite3.Connection) -> dict[MatchKey, int]:
         (row["season"], row["home_key"], row["away_key"]): row["id"]
         for row in conn.execute("SELECT id, season, home_key, away_key FROM matches")
     }
+
+
+def open_conflicts(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return list(
+        conn.execute(
+            "SELECT c.*, m.home, m.away, m.date FROM conflicts c"
+            " JOIN matches m ON m.id = c.match_id WHERE c.resolved = 0"
+            " ORDER BY c.detected_at"
+        )
+    )
 
 
 def last_fetch(conn: sqlite3.Connection, source: str) -> dt.datetime | None:

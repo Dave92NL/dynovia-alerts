@@ -53,11 +53,20 @@ def test_a_match_that_gains_a_date_stays_one_row(conn):
     assert list(stored.values())[0].date == dt.date(2026, 10, 3)
 
 
-def test_a_later_dateless_scrape_does_not_wipe_a_known_date(conn):
+def test_another_source_not_knowing_the_date_does_not_wipe_it(conn):
+    db.store_matches(conn, [match()], "90minut", NOW)
+    db.store_matches(conn, [match(date=None, time=None)], "futbolowo", NOW)
+
+    assert list(db.stored_matches(conn).values())[0].time == dt.time(16, 0)
+
+
+def test_the_source_that_gave_the_date_may_take_it_back(conn):
+    # Each source keeps its own row, so this is 90minut changing its mind about
+    # a fixture rather than a second opinion - and its latest word stands.
     db.store_matches(conn, [match()], "90minut", NOW)
     db.store_matches(conn, [match(date=None, time=None)], "90minut", NOW)
 
-    assert list(db.stored_matches(conn).values())[0].time == dt.time(16, 0)
+    assert list(db.stored_matches(conn).values())[0].date is None
 
 
 def test_team_name_spelling_does_not_split_a_match(conn):

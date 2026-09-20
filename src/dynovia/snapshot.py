@@ -29,7 +29,15 @@ def main(argv: list[str]) -> None:
 
     scraper = SCRAPERS[argv[0]]()
     pages = scraper.download(scraper.seed_pages())
-    pages |= scraper.download(scraper.follow_pages(pages))
+    for _ in range(scraper.MAX_ROUNDS):
+        missing = {
+            key: url
+            for key, url in scraper.follow_pages(pages).items()
+            if key not in pages
+        }
+        if not missing:
+            break
+        pages |= scraper.download(missing)
 
     out = FIXTURES_DIR / scraper.name
     out.mkdir(parents=True, exist_ok=True)

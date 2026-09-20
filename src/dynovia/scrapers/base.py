@@ -99,14 +99,22 @@ class Scraper(ABC):
 
     # --- provided -------------------------------------------------------------
 
+    MAX_ROUNDS = 4
+    """How many times follow_pages() may ask for more pages. 90minut needs three
+    (season list -> season fixtures -> league table); the cap is only there to
+    stop a buggy scraper from looping forever."""
+
     def fetch(self) -> ScrapeResult:
         pages = self.download(self.seed_pages())
-        # ponytail: two download rounds, which covers every source in the plan
-        # (90minut club -> league, futbolowo schedule -> match reports). A third
-        # round would need a real crawl queue; add one only if a source demands it.
-        follow = self.follow_pages(pages)
-        if follow:
-            pages |= self.download(follow)
+        for _ in range(self.MAX_ROUNDS):
+            missing = {
+                key: url
+                for key, url in self.follow_pages(pages).items()
+                if key not in pages
+            }
+            if not missing:
+                break
+            pages |= self.download(missing)
         result = self.parse(pages)
         if not getattr(result, self.primary):
             raise ScraperError(

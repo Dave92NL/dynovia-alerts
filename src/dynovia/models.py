@@ -47,7 +47,8 @@ def normalize_player(name: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class MatchData:
-    date: dt.date
+    # Both optional: 90minut lists late rounds with no date and no kickoff yet.
+    date: dt.date | None
     time: dt.time | None
     competition: str
     home: str

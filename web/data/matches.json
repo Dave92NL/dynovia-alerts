@@ -21,7 +21,20 @@
   "home": "Dynovia Dynów",
   "homeScore": 6,
   "round": 2,
-  "scorers": [],
+  "scorers": [
+   {
+    "minute": null,
+    "player": "Filip Goleś"
+   },
+   {
+    "minute": null,
+    "player": "Arkadiusz Kłoda"
+   },
+   {
+    "minute": null,
+    "player": "Kamil Socha"
+   }
+  ],
   "status": "finished",
   "time": "17:00"
  },
@@ -34,7 +47,24 @@
   "home": "Markovia Markowa",
   "homeScore": 1,
   "round": 3,
-  "scorers": [],
+  "scorers": [
+   {
+    "minute": null,
+    "player": "Michael Londono Silva"
+   },
+   {
+    "minute": null,
+    "player": "Ruslan Kovtok"
+   },
+   {
+    "minute": null,
+    "player": "Sylwester Paszko"
+   },
+   {
+    "minute": null,
+    "player": "Arkadiusz Kłoda"
+   }
+  ],
   "status": "finished",
   "time": "11:00"
  },

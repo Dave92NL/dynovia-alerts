@@ -24,7 +24,7 @@ WEB_DATA = ROOT / "web" / "data"
 US = normalize_team(CLUB)
 
 
-def _scorers_by_match(conn, season: str) -> dict[int, list[dict]]:
+def scorers_by_match(conn, season: str) -> dict[int, list[dict]]:
     """Goals per match from the most trusted source that saw the match - the
     same rule the statistics use, so the two can never tell different stories."""
     rows = conn.execute(
@@ -53,7 +53,7 @@ def _scorers_by_match(conn, season: str) -> dict[int, list[dict]]:
 
 
 def build(conn, season: str) -> dict[str, object]:
-    scorers = _scorers_by_match(conn, season)
+    scorers = scorers_by_match(conn, season)
     ids = db.match_ids(conn)
 
     matches = []

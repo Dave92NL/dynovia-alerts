@@ -764,6 +764,18 @@ def match_squad(conn: sqlite3.Connection, match_id: int) -> list[str]:
     ]
 
 
+def match_appearances(conn: sqlite3.Connection, match_id: int) -> list[sqlite3.Row]:
+    """Who played and for how long, from the PZPN protocol only - it is the one
+    source that carries minutes, the same rule player_summary counts by."""
+    return conn.execute(
+        "SELECT p.name, a.started, a.minute_in, a.minute_out FROM appearances a"
+        " JOIN players p ON p.id = a.player_id"
+        " WHERE a.match_id = ? AND a.source = 'laczynaspilka'"
+        " ORDER BY a.started DESC, COALESCE(a.minute_in, 0), p.name",
+        (match_id,),
+    ).fetchall()
+
+
 def report_for(conn: sqlite3.Connection, match_id: int) -> str:
     row = conn.execute(
         "SELECT text FROM articles WHERE match_id = ? ORDER BY LENGTH(text) DESC LIMIT 1",

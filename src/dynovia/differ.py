@@ -10,6 +10,7 @@ goes through an aware datetime rather than a naive local one.
 from __future__ import annotations
 
 import datetime as dt
+from collections import Counter
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -21,6 +22,15 @@ REMINDERS = (
     (dt.timedelta(hours=24), "reminder_24h"),
     (dt.timedelta(hours=1), "reminder_1h"),
 )
+
+FULL_TIME = 90
+"""Minutes. A protocol records the whistle as minute 90 for everyone still on
+the pitch, so it is what tells a substitution apart from simply finishing."""
+
+AFTERMATH = dt.timedelta(hours=72)
+"""How long after kickoff goals and protocols are still news. It is also what
+keeps a rebuilt database from replaying a whole season into the phone: nothing
+older than three days can produce a message, whatever the dedup table lost."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +113,74 @@ def due_reminders(
             if now >= start - lead:
                 events.append(Event(key, kind, _reminder_text(kind, match, now)))
     return events
+
+
+def fresh_matches(
+    matches: dict[MatchKey, MatchData], now: dt.datetime
+) -> list[MatchKey]:
+    """Matches whose details are still arriving: kicked off, but not long ago.
+
+    Goals, squads and protocols are read per match and only for these, so a
+    tick outside a match weekend costs no queries at all.
+    """
+    return [
+        key
+        for key, match in matches.items()
+        if (start := kickoff(match)) is not None and start <= now <= start + AFTERMATH
+    ]
+
+
+def match_details(
+    key: MatchKey, match: MatchData, scorers: list[dict], squad: list[dict]
+) -> list[Event]:
+    """Goals and the protocol, offered again on every tick.
+
+    Like due_reminders this re-offers everything it can see and lets
+    notifications_sent keep each one to a single message, because the run that
+    would have caught the moment may simply not have happened.
+    """
+    events: list[Event] = []
+    scored: Counter = Counter()
+    for goal in scorers:
+        scored[goal["player"]] += 1
+        # The minute is deliberately not part of the kind. Sources correct each
+        # other's minutes and a correction is not a second goal; a player
+        # scoring twice is, which is what the count carries.
+        events.append(
+            Event(
+                key,
+                f"goal:{goal['player']}:{scored[goal['player']]}",
+                f"⚽ GOL: {goal['player']}{_minute(goal['minute'])}"
+                f"\n{match.home} – {match.away}",
+            )
+        )
+    if squad:
+        events.append(Event(key, "protocol_ready", _protocol_text(match, squad)))
+    return events
+
+
+def _protocol_text(match: MatchData, squad: list[dict]) -> str:
+    lines = [f"📋 Protokół: {match.home} – {match.away}"]
+    started = [p["name"] for p in squad if p["started"]]
+    if started:
+        lines.append("Skład: " + ", ".join(started))
+    # Who replaced whom is not recorded anywhere, only each player's own
+    # minutes, so the two directions are listed rather than paired into a lie.
+    # The protocol writes minute_out = 90 for everyone still on the pitch at
+    # the whistle, and the final whistle is not a substitution.
+    changes = [f"⬆️ {p['name']}{_minute(p['minute_in'])}" for p in squad if p["minute_in"]]
+    changes += [
+        f"⬇️ {p['name']}{_minute(p['minute_out'])}"
+        for p in squad
+        if p["minute_out"] and p["minute_out"] < FULL_TIME
+    ]
+    if changes:
+        lines.append("Zmiany: " + " · ".join(changes))
+    return "\n".join(lines)
+
+
+def _minute(minute: int | None) -> str:
+    return f" {minute}'" if minute else ""
 
 
 def _reminder_text(kind: str, match: MatchData, now: dt.datetime) -> str:

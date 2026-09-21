@@ -126,7 +126,32 @@ def collect(conn, now: dt.datetime, *, offline: bool, quiet: bool = False) -> li
     if imported and not first_run:
         events += _conflict_events(conn, imported)
     if not first_run:
+        events += _detail_events(conn, now)
         events += _assist_questions(conn)
+    return events
+
+
+def _detail_events(conn, now: dt.datetime) -> list[differ.Event]:
+    """Goals and squads live in their own tables, keyed by match id, so they
+    cannot come out of differ.diff() the way the match fields do."""
+    matches = db.stored_matches(conn)
+    fresh = differ.fresh_matches(matches, now)
+    if not fresh:
+        return []
+    ids = db.match_ids(conn)
+    seasons = {matches[key].season for key in fresh}
+    scorers = {}
+    for season in seasons:
+        scorers |= export.scorers_by_match(conn, season)
+    events = []
+    for key in fresh:
+        match_id = ids[key]
+        events += differ.match_details(
+            key,
+            matches[key],
+            scorers.get(match_id, []),
+            [dict(row) for row in db.match_appearances(conn, match_id)],
+        )
     return events
 
 

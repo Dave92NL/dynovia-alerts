@@ -2,10 +2,10 @@ name: scrape
 
 on:
   schedule:
-    # Every 10 minutes. GitHub runs scheduled workflows late under load, often
-    # by 5-15 minutes, which is why reminders in differ.py are thresholds
-    # rather than windows.
-    - cron: "*/10 * * * *"
+    # Hourly, because that is roughly the best GitHub will honour anyway - a
+    # */10 schedule measured out at two runs in eleven hours. The ten-minute
+    # tick lives inside the job now; this only has to start one.
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 # The database is committed back to the repo, so two runs must never overlap.
@@ -19,7 +19,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
 
@@ -30,28 +30,36 @@ jobs:
 
       - run: pip install -e .
 
-      - name: scrape, notify, answer commands
+      - name: scrape on a ten-minute tick for the next hour
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
-        run: python -m dynovia.run
-
-      - name: commit the data if it moved
         run: |
           git config user.name "dynovia-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A data web/data
-          if git diff --cached --quiet; then
-            echo "nic się nie zmieniło"
-          else
-            git commit -m "dane: $(date -u '+%Y-%m-%d %H:%M') UTC"
-            # Another run may have pushed while this one was scraping.
-            git pull --rebase --autostash
-            git push
-          fi
+          # The job keeps its own clock. A schedule event only has to arrive
+          # once an hour for the ten-minute tick to hold, which matters because
+          # a goal notified four hours late is not a notification. Which
+          # sources actually get fetched is still poll_interval's call, so this
+          # does not mean 144 hits a day on a village club's website.
+          for tick in $(seq 6); do
+            python -m dynovia.run
+            git add -A data web/data
+            if git diff --cached --quiet; then
+              echo "tik $tick: nic się nie zmieniło"
+            else
+              git commit -m "dane: $(date -u '+%Y-%m-%d %H:%M') UTC"
+              # Another run may have pushed while this one was scraping.
+              git pull --rebase --autostash
+              git push
+            fi
+            # Not `[ ... ] && sleep`: on the last tick that tests false, and
+            # under `set -e` a false test ends the job as a failure.
+            if [ "$tick" -lt 6 ]; then sleep 600; fi
+          done
 
       - name: tell me if the run broke
         if: failure()

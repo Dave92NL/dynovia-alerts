@@ -131,3 +131,81 @@ def test_the_daily_refresh_waits_for_six_in_the_morning():
 
 def test_a_source_never_fetched_is_always_due():
     assert run.is_due(None, [match()], KICKOFF) is True
+
+
+# --- gole i protokół po gwizdku -------------------------------------------
+
+
+def goal(player: str, minute: int | None = None) -> dict:
+    return {"player": player, "minute": minute}
+
+
+def played(name: str, started=True, minute_in=None, minute_out=None) -> dict:
+    return {
+        "name": name,
+        "started": started,
+        "minute_in": minute_in,
+        "minute_out": minute_out,
+    }
+
+
+def details(scorers=(), squad=(), **overrides):
+    m = match(**overrides)
+    return differ.match_details(m.key, m, list(scorers), list(squad))
+
+
+def test_only_matches_that_kicked_off_recently_are_looked_at():
+    now = KICKOFF + dt.timedelta(hours=1)
+    assert differ.fresh_matches(stored(match()), now) == [match().key]
+    assert differ.fresh_matches(stored(match()), KICKOFF - dt.timedelta(minutes=1)) == []
+    # Three days on, a goal is archaeology - and a rebuilt database must not
+    # replay the whole season into the phone.
+    assert differ.fresh_matches(stored(match()), KICKOFF + differ.AFTERMATH * 2) == []
+
+
+def test_a_match_with_no_kickoff_yet_is_never_fresh():
+    assert differ.fresh_matches(stored(match(date=None, time=None)), KICKOFF) == []
+
+
+def test_every_goal_becomes_its_own_message():
+    events = details(scorers=[goal("Filip Goleś", 40), goal("Ruslan Kovtok", 67)])
+    assert kinds(events) == ["goal", "goal"]
+    assert "Filip Goleś 40'" in events[0].text
+
+
+def test_a_corrected_minute_is_not_a_second_goal():
+    # One source says 40', a more trusted one later says 42'. Same goal.
+    first = details(scorers=[goal("Filip Goleś", 40)])
+    again = details(scorers=[goal("Filip Goleś", 42)])
+    assert first[0].kind == again[0].kind
+
+
+def test_a_brace_is_two_messages_even_without_minutes():
+    events = details(scorers=[goal("Filip Goleś"), goal("Filip Goleś")])
+    assert len({e.kind for e in events}) == 2
+
+
+def test_the_protocol_reports_the_squad_and_both_directions_of_a_change():
+    events = details(
+        squad=[
+            played("Arkadiusz Kłoda", minute_out=90),
+            played("Kamil Socha", started=False, minute_in=60),
+            played("Sylwester Paszko", minute_out=60),
+        ]
+    )
+    assert kinds(events) == ["protocol_ready"]
+    text = events[0].text
+    assert "Skład: Arkadiusz Kłoda, Sylwester Paszko" in text
+    assert "⬆️ Kamil Socha 60'" in text and "⬇️ Sylwester Paszko 60'" in text
+
+
+def test_playing_to_the_whistle_is_not_a_substitution():
+    # The protocol stamps minute_out = 90 on everyone still on the pitch, so a
+    # naive read turns a full squad into eleven substitutions.
+    events = details(squad=[played(f"Gracz {i}", minute_out=90) for i in range(11)])
+    assert "Zmiany" not in events[0].text
+
+
+def test_no_protocol_means_no_protocol_message():
+    assert details(scorers=[goal("Filip Goleś", 40)]) != []
+    assert kinds(details(scorers=[goal("Filip Goleś", 40)])) == ["goal"]

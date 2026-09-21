@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 
 const html = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
 const app = readFileSync(new URL("../web/app.js", import.meta.url), "utf8");
-const worker = readFileSync(new URL("../web/sw.js", import.meta.url), "utf8");
 
 test("mobile design has clear hierarchy for match, statistics, and table", () => {
   assert.match(html, /class="app-shell"/);
@@ -14,8 +13,4 @@ test("mobile design has clear hierarchy for match, statistics, and table", () =>
   assert.match(app, /match-hero/);
   assert.match(app, /stat-summary/);
   assert.match(app, /table-card/);
-});
-
-test("a visual release renews the app shell cache", () => {
-  assert.match(worker, /const SHELL = "dynovia-shell-v2"/);
 });

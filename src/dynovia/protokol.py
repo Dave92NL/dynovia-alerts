@@ -16,6 +16,7 @@ as fragile as it sounds - see _icon_kind.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import re
 import sqlite3
@@ -25,7 +26,15 @@ from pathlib import Path
 from selectolax.parser import HTMLParser
 
 from dynovia import db, merge
-from dynovia.models import AppearanceData, CardData, GoalData, MatchKey, normalize_team
+from dynovia.models import (
+    AppearanceData,
+    CardData,
+    GoalData,
+    MatchData,
+    MatchKey,
+    normalize_team,
+    season_for,
+)
 
 log = logging.getLogger(__name__)
 
@@ -233,3 +242,66 @@ def import_file(
         + db.store_goals(conn, goals, SOURCE, registry)
         + db.store_cards(conn, cards, SOURCE, registry)
     )
+
+
+SCHEDULE_FILE = "terminarz.txt"
+
+_SCHEDULE_DATE = re.compile(r"^(\d{2})\.(\d{2})\.(\d{4})$")
+_SCHEDULE_TIME = re.compile(r"^(\d{1,2}):(\d{2})$")
+_SCHEDULE_SCORE = re.compile(r"^(\d+):(\d+)$")
+
+
+def parse_schedule(text: str) -> list["MatchData"]:
+    """The fixture list as laczynaspilka renders it, pasted into a text file.
+
+    Six fields per match once blank lines are gone: date, hosts, then either a
+    kickoff, a score or "-:-", then guests, competition and status. The PZPN
+    site cannot be fetched, so this is how its schedule gets in - and being the
+    PZPN record, whatever it says outranks every scraper.
+    """
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    matches = []
+    index = 0
+    while index + 5 < len(lines):
+        date_match = _SCHEDULE_DATE.match(lines[index])
+        if date_match is None:
+            index += 1
+            continue
+        day, month, year = date_match.groups()
+        date = dt.date(int(year), int(month), int(day))
+        home, middle, away, competition = lines[index + 1 : index + 5]
+
+        time = score = None
+        if found := _SCHEDULE_TIME.match(middle):
+            time = dt.time(int(found.group(1)), int(found.group(2)))
+        elif found := _SCHEDULE_SCORE.match(middle):
+            score = (int(found.group(1)), int(found.group(2)))
+
+        matches.append(
+            MatchData(
+                season=season_for(date),
+                date=date,
+                time=time,
+                competition=competition,
+                home=home,
+                away=away,
+                home_score=score[0] if score else None,
+                away_score=score[1] if score else None,
+                status="finished" if score else "scheduled",
+            )
+        )
+        index += 6
+    return matches
+
+
+def import_schedule(
+    conn: sqlite3.Connection, path: Path, fetched_at: dt.datetime
+) -> list[tuple[int, merge.Conflict]]:
+    if not path.is_file():
+        return []
+    matches = parse_schedule(path.read_text(encoding="utf-8"))
+    if not matches:
+        log.warning("terminarz PZPN %s: nic nie sparsowano", path.name)
+        return []
+    log.info("terminarz PZPN: %d meczow", len(matches))
+    return db.store_matches(conn, matches, SOURCE, fetched_at)

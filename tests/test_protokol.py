@@ -105,3 +105,55 @@ def test_importing_the_same_file_twice_changes_nothing(conn):
 def test_full_names_in_the_protocol_need_no_questions(conn):
     # "Michael Steve Londono Silva" here, "Michael Londono Silva" in the roster.
     assert protokol.import_file(conn, FIXTURE, REGISTRY) == []
+
+
+SCHEDULE = """
+19.09.2026
+Dynovia Dynów
+3:1
+Grom Handzlówka
+Klasa A
+Rozegrany
+27.09.2026
+Astra Medynia Głogowska
+14:00
+Dynovia Dynów
+Klasa A
+Nierozegrany
+24.10.2026
+Sawa Sonina
+-:-
+Dynovia Dynów
+Klasa A
+Nierozegrany
+"""
+
+
+def test_the_pzpn_schedule_reads_scores_kickoffs_and_blanks():
+    played, upcoming, undated = protokol.parse_schedule(SCHEDULE)
+
+    assert (played.home_score, played.away_score, played.status) == (3, 1, "finished")
+    assert upcoming.time == dt.time(14, 0) and upcoming.status == "scheduled"
+    assert undated.time is None and undated.home_score is None
+
+
+def test_the_schedule_names_the_league():
+    assert {m.competition for m in protokol.parse_schedule(SCHEDULE)} == {"Klasa A"}
+
+
+def test_pzpn_outranks_the_scrapers_on_a_date(conn):
+    from dynovia import db as store
+
+    before = store.stored_matches(conn)
+    key = next(k for k in before if k[2] == "stal ii lancut" or k[1] == "stal ii lancut")
+    assert before[key].date == dt.date(2026, 10, 10)  # 90minut's version
+
+    store.store_matches(
+        conn,
+        protokol.parse_schedule(
+            "11.10.2026\nStal II Łańcut\n14:00\nDynovia Dynów\nKlasa A\nNierozegrany\n"
+        ),
+        protokol.SOURCE,
+        dt.datetime.now(dt.UTC),
+    )
+    assert store.stored_matches(conn)[key].date == dt.date(2026, 10, 11)

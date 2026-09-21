@@ -45,6 +45,8 @@ _STROKED_L = str.maketrans({"ł": "l", "Ł": "l"})
 # teams in the league need no entry here at all.
 TEAM_ALIASES = {
     "stobierna krzywe": "stobierna krzywe stobierna",
+    # PZPN abbreviates where the others spell it out.
+    "grodziszczanka grodzisko dln": "grodziszczanka grodzisko dolne",
 }
 
 
@@ -128,8 +130,9 @@ class TableRow:
     team: str
     played: int
     points: int
-    goals_for: int
-    goals_against: int
+    goal_difference: int
+    """What the sources actually print: one signed number, not goals for and
+    against separately."""
 
 
 @dataclass(frozen=True, slots=True)

@@ -14,7 +14,7 @@ import logging
 import sys
 
 from dynovia import db, differ, players, protokol
-from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH
+from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH, SCHEDULE_PATH
 from dynovia.differ import WARSAW, kickoff
 from dynovia.notify import telegram
 from dynovia.scrapers import SCRAPERS
@@ -64,6 +64,9 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
     # they fill as news, so the whole run stays silent, not just source one.
     first_run = not db.stored_matches(conn)
     registry = players.load_roster(ROSTER_PATH)
+    # The PZPN schedule goes in first: it is the source of record, so every
+    # scraper that follows is measured against it rather than the other way.
+    pzpn = protokol.import_schedule(conn, SCHEDULE_PATH, now)
     if not registry:
         log.warning("kadra.txt is empty - player names cannot be resolved yet")
     events: list[differ.Event] = []
@@ -97,10 +100,13 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
             events += _conflict_events(conn, conflicts)
         if result.reports:
             db.store_reports(conn, result.reports, result.source, result.fetched_at)
+        if result.table:
+            season = next(iter(result.matches)).season if result.matches else ""
+            db.store_table(conn, result.table, season, result.source, result.fetched_at)
 
     # Hand-saved PZPN protocols, if any are waiting. Local files, no network,
     # so this runs on every tick regardless of the polling schedule.
-    imported = protokol.import_directory(conn, PROTOCOLS_DIR, registry)
+    imported = pzpn + protokol.import_directory(conn, PROTOCOLS_DIR, registry)
     if imported and not first_run:
         events += _conflict_events(conn, imported)
     return events

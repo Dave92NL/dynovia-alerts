@@ -20,28 +20,36 @@ from dataclasses import dataclass
 from dynovia.models import MatchData
 
 TRUST: dict[str, tuple[str, ...]] = {
-    # regiowyniki ahead of 90minut, against the plan's table. The two sources
-    # disagreed about rounds 9 and 10; the PZPN schedule the owner checked gives
-    # 11.10 and 18.10, which is regiowyniki both times. regiowyniki also carries
-    # kickoff times that 90minut leaves blank.
-    "date": ("regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
-    "time": ("regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
-    "score": ("90minut", "regiowyniki", "podkarpacielive", "futbolowo"),
+    # laczynaspilka first everywhere: it is the PZPN record, so when it has
+    # something to say it outranks every scraper. It only speaks when the owner
+    # imports it by hand, which is why the others still matter.
+    #
+    # Below it, regiowyniki ahead of 90minut, against the plan's table: the two
+    # disagreed about rounds 9 and 10 and the PZPN schedule gave 11.10 and
+    # 18.10, which is regiowyniki both times.
+    "date": ("laczynaspilka", "regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
+    "time": ("laczynaspilka", "regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
+    "score": ("laczynaspilka", "90minut", "regiowyniki", "podkarpacielive", "futbolowo"),
     # Not in the plan's table, because the plan did not expect the sources to
     # disagree about the league's name. 90minut prints "VI liga" (its generic
     # sixth-tier label) and futbolowo prints nothing, so regiowyniki leads here
     # with the name a human would use: "Klasa A".
-    "competition": ("regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
+    "competition": (
+        "laczynaspilka",
+        "regiowyniki",
+        "90minut",
+        "futbolowo",
+        "podkarpacielive",
+    ),
 }
 
-GOAL_TRUST = ("podkarpacielive", "laczynaspilka", "futbolowo")
+GOAL_TRUST = ("laczynaspilka", "podkarpacielive", "futbolowo")
 """Whose scorer list to believe, most trusted first.
 
-The plan put futbolowo first. Measured against the PZPN protocol it is the
-least reliable of the three: for the Grom match it recorded Dynovia's second
-goal as an own goal, where both podkarpacielive and the protocol name Filip
-Goleś in the 42nd minute. podkarpacielive also gives minutes, which the others
-either lack or publish days later."""
+The PZPN protocol leads when it has been imported. The plan put futbolowo
+first; measured against that protocol it is the least reliable of the three,
+having recorded Dynovia's second goal against Grom as an own goal where both
+the protocol and podkarpacielive name Filip Goleś in the 42nd minute."""
 
 SILENT = frozenset({"competition"})
 """Fields where the sources differ by convention rather than by mistake. The

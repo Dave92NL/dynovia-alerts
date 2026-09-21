@@ -26,6 +26,7 @@ from dynovia.models import (
     MatchData,
     MatchKey,
     MatchReport,
+    TableRow,
     normalize_team,
     season_for,
 )
@@ -140,6 +141,31 @@ def _parse_date(text: str) -> dt.date | None:
 def _parse_time(text: str) -> dt.time | None:
     match = re.search(r"(\d{1,2}):(\d{2})", text)
     return dt.time(int(match.group(1)), int(match.group(2))) if match else None
+
+
+def parse_table(html: str) -> list[TableRow]:
+    """The league table, which rides along on the same page as the fixtures."""
+    table = []
+    for row in HTMLParser(html).css("tr.gameRow"):
+        cells = {
+            name: row.css_first(f"td.{name}")
+            for name in ("position", "name", "gamesCount", "points", "goals")
+        }
+        if not all(cells.values()):
+            continue
+        values = {name: _text(cell) for name, cell in cells.items()}
+        if not values["position"].isdigit():
+            continue
+        table.append(
+            TableRow(
+                position=int(values["position"]),
+                team=clean_team(values["name"]),
+                played=int(values["gamesCount"]),
+                points=int(values["points"]),
+                goal_difference=int(values["goals"]),
+            )
+        )
+    return table
 
 
 def parse_article_list(html: str) -> list[tuple[str, str, dt.datetime | None]]:
@@ -314,5 +340,9 @@ class Futbolowo(Scraper):
             goals += scored
 
         return self.new_result(
-            matches=matches, lineups=lineups, goals=goals, reports=reports
+            matches=matches,
+            lineups=lineups,
+            goals=goals,
+            reports=reports,
+            table=parse_table(pages["terminarz"]),
         )

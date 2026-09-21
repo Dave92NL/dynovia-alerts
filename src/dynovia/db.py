@@ -147,6 +147,26 @@ CREATE TABLE IF NOT EXISTS articles (
     fetched_at   TEXT    NOT NULL
 );
 
+-- Replaced wholesale per source on every scrape: a league table is a snapshot,
+-- not a log, and merging two sources' standings row by row would be nonsense.
+CREATE TABLE IF NOT EXISTS league_table (
+    season          TEXT    NOT NULL,
+    source          TEXT    NOT NULL,
+    position        INTEGER NOT NULL,
+    team            TEXT    NOT NULL,
+    team_key        TEXT    NOT NULL,
+    played          INTEGER NOT NULL,
+    points          INTEGER NOT NULL,
+    goal_difference INTEGER NOT NULL,
+    updated_at      TEXT    NOT NULL,
+    PRIMARY KEY (season, source, team_key)
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS notifications_sent (
     match_id INTEGER NOT NULL REFERENCES matches(id),
     kind     TEXT    NOT NULL,
@@ -547,3 +567,73 @@ def store_cards(conn, cards, source, registry) -> list[tuple[int, merge.Conflict
         " VALUES (?, ?, ?, ?, ?)",
         ("minute", "color"),
     )
+
+
+def store_table(conn, table, season: str, source: str, fetched_at: dt.datetime) -> None:
+    if not table:
+        return
+    with conn:
+        conn.execute(
+            "DELETE FROM league_table WHERE season = ? AND source = ?", (season, source)
+        )
+        conn.executemany(
+            "INSERT INTO league_table (season, source, position, team, team_key,"
+            " played, points, goal_difference, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    season,
+                    source,
+                    row.position,
+                    row.team,
+                    normalize_team(row.team),
+                    row.played,
+                    row.points,
+                    row.goal_difference,
+                    fetched_at.isoformat(),
+                )
+                for row in table
+            ],
+        )
+
+
+def read_table(conn, season: str) -> list[sqlite3.Row]:
+    """The standings, from whichever source last supplied them."""
+    return list(
+        conn.execute(
+            "SELECT * FROM league_table WHERE season = ?"
+            " AND source = (SELECT source FROM league_table WHERE season = ?"
+            "               ORDER BY updated_at DESC LIMIT 1)"
+            " ORDER BY position",
+            (season, season),
+        )
+    )
+
+
+def get_setting(conn, key: str) -> str | None:
+    row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def set_setting(conn, key: str, value: str) -> None:
+    with conn:
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?, ?)"
+            " ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            (key, str(value)),
+        )
+
+
+def source_status(conn) -> list[sqlite3.Row]:
+    """When each source last delivered, and how much of the season it covers."""
+    return list(
+        conn.execute(
+            "SELECT source, COUNT(*) AS matches, MAX(fetched_at) AS last"
+            " FROM match_sources GROUP BY source ORDER BY source"
+        )
+    )
+
+
+def resolve_conflict(conn, conflict_id: int) -> None:
+    with conn:
+        conn.execute("UPDATE conflicts SET resolved = 1 WHERE id = ?", (conflict_id,))

@@ -1,0 +1,11 @@
+# Cloudflare kieruje nowe projekty do Workers zamiast Pages, a formularz
+# Workers pyta o komendę deploya, nie o katalog. Ten plik mówi wranglerowi,
+# że nie ma tu żadnego kodu - tylko katalog web/ do wystawienia.
+#
+# To nadal statyczna strona bez build-stepu: wrangler jedynie wysyła pliki.
+
+name = "dynovia-alerts"
+compatibility_date = "2024-11-01"
+
+[assets]
+directory = "./web"

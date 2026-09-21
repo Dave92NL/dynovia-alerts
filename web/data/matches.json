@@ -1,0 +1,409 @@
+[
+ {
+  "atHome": true,
+  "away": "KS Dąbrówki",
+  "awayScore": 1,
+  "competition": "Klasa A",
+  "date": "2026-08-16",
+  "home": "Dynovia Dynów",
+  "homeScore": 1,
+  "round": 1,
+  "scorers": [],
+  "status": "finished",
+  "time": "17:00"
+ },
+ {
+  "atHome": true,
+  "away": "Polonia Hyżne",
+  "awayScore": 0,
+  "competition": "Klasa A",
+  "date": "2026-08-23",
+  "home": "Dynovia Dynów",
+  "homeScore": 6,
+  "round": 2,
+  "scorers": [],
+  "status": "finished",
+  "time": "17:00"
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": 4,
+  "competition": "Klasa A",
+  "date": "2026-08-30",
+  "home": "Markovia Markowa",
+  "homeScore": 1,
+  "round": 3,
+  "scorers": [],
+  "status": "finished",
+  "time": "11:00"
+ },
+ {
+  "atHome": true,
+  "away": "Plantator Nienadówka",
+  "awayScore": 1,
+  "competition": "Klasa A",
+  "date": "2026-09-06",
+  "home": "Dynovia Dynów",
+  "homeScore": 2,
+  "round": 4,
+  "scorers": [
+   {
+    "minute": null,
+    "player": "Paweł Szczawiński"
+   },
+   {
+    "minute": null,
+    "player": "Sylwester Paszko"
+   }
+  ],
+  "status": "finished",
+  "time": "16:00"
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": 6,
+  "competition": "Klasa A",
+  "date": "2026-09-13",
+  "home": "Grodziszczanka Grodzisko Dolne",
+  "homeScore": 1,
+  "round": 5,
+  "scorers": [
+   {
+    "minute": null,
+    "player": "Ruslan Kovtok"
+   },
+   {
+    "minute": null,
+    "player": "Sylwester Paszko"
+   },
+   {
+    "minute": null,
+    "player": "Arkadiusz Kłoda"
+   },
+   {
+    "minute": null,
+    "player": "Kamil Socha"
+   },
+   {
+    "minute": null,
+    "player": "Patryk Duchniak"
+   }
+  ],
+  "status": "finished",
+  "time": "16:30"
+ },
+ {
+  "atHome": true,
+  "away": "Grom Handzlówka",
+  "awayScore": 1,
+  "competition": "Klasa A",
+  "date": "2026-09-19",
+  "home": "Dynovia Dynów",
+  "homeScore": 3,
+  "round": 6,
+  "scorers": [
+   {
+    "minute": 40,
+    "player": "Filip Goleś"
+   },
+   {
+    "minute": 42,
+    "player": "Filip Goleś"
+   },
+   {
+    "minute": 87,
+    "player": "Arkadiusz Kłoda"
+   }
+  ],
+  "status": "finished",
+  "time": "16:30"
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-09-27",
+  "home": "Astra Medynia Głogowska",
+  "homeScore": null,
+  "round": 7,
+  "scorers": [],
+  "status": "scheduled",
+  "time": "14:00"
+ },
+ {
+  "atHome": true,
+  "away": "Crasnovia Krasne",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-10-03",
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 8,
+  "scorers": [],
+  "status": "scheduled",
+  "time": "16:00"
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-10-11",
+  "home": "Stal II Łańcut",
+  "homeScore": null,
+  "round": 9,
+  "scorers": [],
+  "status": "scheduled",
+  "time": "14:00"
+ },
+ {
+  "atHome": true,
+  "away": "KS Pawłokoma",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-10-18",
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 10,
+  "scorers": [],
+  "status": "scheduled",
+  "time": "15:00"
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-10-24",
+  "home": "Sawa Sonina",
+  "homeScore": null,
+  "round": 11,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-10-31",
+  "home": "Jawor Krzemienica",
+  "homeScore": null,
+  "round": 12,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Stobierna-Krzywe Stobierna",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-11-07",
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 13,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": "2026-11-11",
+  "home": "Iskra Jawornik Polski",
+  "homeScore": null,
+  "round": 14,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "VI liga",
+  "date": null,
+  "home": "KS Dąbrówki",
+  "homeScore": null,
+  "round": 16,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Polonia Hyżne",
+  "homeScore": null,
+  "round": 17,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Markovia Markowa",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 18,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Plantator Nienadówka",
+  "homeScore": null,
+  "round": 19,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Grodziszczanka Grodzisko Dolne",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 20,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Grom Handzlówka",
+  "homeScore": null,
+  "round": 21,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Astra Medynia Głogowska",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 22,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Crasnovia Krasne",
+  "homeScore": null,
+  "round": 23,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Stal II Łańcut",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 24,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "KS Pawłokoma",
+  "homeScore": null,
+  "round": 25,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Sawa Sonina",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 26,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Jawor Krzemienica",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 27,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": false,
+  "away": "Dynovia Dynów",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Stobierna-Krzywe Stobierna",
+  "homeScore": null,
+  "round": 28,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ },
+ {
+  "atHome": true,
+  "away": "Iskra Jawornik Polski",
+  "awayScore": null,
+  "competition": "Klasa A",
+  "date": null,
+  "home": "Dynovia Dynów",
+  "homeScore": null,
+  "round": 29,
+  "scorers": [],
+  "status": "scheduled",
+  "time": null
+ }
+]

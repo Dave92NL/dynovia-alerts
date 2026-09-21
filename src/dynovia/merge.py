@@ -51,6 +51,12 @@ first; measured against that protocol it is the least reliable of the three,
 having recorded Dynovia's second goal against Grom as an own goal where both
 the protocol and podkarpacielive name Filip Goleś in the 42nd minute."""
 
+NAME_TRUST = ("regiowyniki", "90minut", "podkarpacielive", "laczynaspilka", "futbolowo")
+"""Whose spelling of a team name to show. Separate from the data hierarchy on
+purpose: PZPN is the source of record but abbreviates, writing "Grodziszczanka
+Grodzisko Dln." where regiowyniki writes it out. Which source is right about a
+date says nothing about which one is nicer to read."""
+
 SILENT = frozenset({"competition"})
 """Fields where the sources differ by convention rather than by mistake. The
 league is "VI liga" on 90minut and "Klasa A" on regiowyniki for every single
@@ -126,16 +132,25 @@ def merge(views: dict[str, MatchData]) -> tuple[MatchData, list[Conflict]]:
         conflicts += found
 
     score = values["score"] or (None, None)
-    # Team names and season are the match key, identical across sources by
-    # definition, so the most trusted view simply supplies the spelling.
+    # Team names are the match key, so every source means the same two clubs;
+    # only the spelling differs, and that has its own order.
     base = views[min(views, key=lambda source: (_rank(source, "date"), source))]
+    named = views[
+        min(
+            views,
+            key=lambda source: (
+                NAME_TRUST.index(source) if source in NAME_TRUST else len(NAME_TRUST),
+                source,
+            ),
+        )
+    ]
     merged = MatchData(
         season=base.season,
         date=values["date"],
         time=values["time"],
         competition=values["competition"] or "",
-        home=base.home,
-        away=base.away,
+        home=named.home,
+        away=named.away,
         round=next((v.round for v in views.values() if v.round is not None), None),
         home_score=score[0],
         away_score=score[1],

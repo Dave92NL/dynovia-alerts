@@ -1,0 +1,122 @@
+[
+ {
+  "goalDifference": 33,
+  "played": 5,
+  "points": 15,
+  "position": 1,
+  "team": "Crasnovia Krasne",
+  "us": false
+ },
+ {
+  "goalDifference": 10,
+  "played": 5,
+  "points": 15,
+  "position": 2,
+  "team": "Sawa Sonina",
+  "us": false
+ },
+ {
+  "goalDifference": 15,
+  "played": 5,
+  "points": 13,
+  "position": 3,
+  "team": "Dynovia Dynów",
+  "us": true
+ },
+ {
+  "goalDifference": 14,
+  "played": 4,
+  "points": 10,
+  "position": 4,
+  "team": "Iskra Jawornik Polski",
+  "us": false
+ },
+ {
+  "goalDifference": 7,
+  "played": 4,
+  "points": 10,
+  "position": 5,
+  "team": "Stobierna Krzywe",
+  "us": false
+ },
+ {
+  "goalDifference": -1,
+  "played": 5,
+  "points": 9,
+  "position": 6,
+  "team": "Astra Medynia Głogowska",
+  "us": false
+ },
+ {
+  "goalDifference": 2,
+  "played": 4,
+  "points": 6,
+  "position": 7,
+  "team": "KS Dąbrówki",
+  "us": false
+ },
+ {
+  "goalDifference": -12,
+  "played": 5,
+  "points": 6,
+  "position": 8,
+  "team": "Stal II Łańcut",
+  "us": false
+ },
+ {
+  "goalDifference": -4,
+  "played": 5,
+  "points": 4,
+  "position": 9,
+  "team": "Plantator Nienadówka",
+  "us": false
+ },
+ {
+  "goalDifference": -11,
+  "played": 5,
+  "points": 4,
+  "position": 10,
+  "team": "KS Pawłokoma",
+  "us": false
+ },
+ {
+  "goalDifference": -4,
+  "played": 5,
+  "points": 3,
+  "position": 11,
+  "team": "Markovia Markowa",
+  "us": false
+ },
+ {
+  "goalDifference": -5,
+  "played": 5,
+  "points": 3,
+  "position": 12,
+  "team": "Grodziszczanka Grodzisko Dolne",
+  "us": false
+ },
+ {
+  "goalDifference": -13,
+  "played": 5,
+  "points": 3,
+  "position": 13,
+  "team": "Grom Handzlówka",
+  "us": false
+ },
+ {
+  "goalDifference": -11,
+  "played": 4,
+  "points": 0,
+  "position": 14,
+  "team": "Jawor Krzemienica",
+  "us": false
+ },
+ {
+  "goalDifference": -20,
+  "played": 4,
+  "points": 0,
+  "position": 15,
+  "team": "Ks Polonia Hyżne",
+  "us": false
+ }
+]

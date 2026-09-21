@@ -13,7 +13,7 @@ import datetime as dt
 import logging
 import sys
 
-from dynovia import bot, db, differ, models, players, protokol
+from dynovia import bot, db, differ, export, models, players, protokol
 from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH, SCHEDULE_PATH
 from dynovia.differ import WARSAW, kickoff
 from dynovia.notify import telegram
@@ -207,6 +207,7 @@ def main(argv: list[str]) -> None:
     events += differ.due_reminders(db.stored_matches(conn), now)
     log.info("%d event(s)", len(events))
     notify(conn, events, dry_run=dry_run)
+    export.write(conn)
     if not dry_run and not offline:
         bot.poll(conn)
     # WAL keeps recent writes in a sidecar file that is deliberately not

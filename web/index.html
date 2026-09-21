@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dynovia Alerts</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#004B96">
+<style>
+  /* Klubowe kolory odczytane wprost z herbu. */
+  :root {
+    --blue: #004B96;
+    --blue-dark: #00376e;
+    --gold: #FFC801;
+    --ink: #10151c;
+    --muted: #6b7684;
+    --line: #e3e7ec;
+    --bg: #f4f6f8;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  header {
+    background: var(--blue);
+    color: #fff;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  header img { width: 38px; height: 38px; border-radius: 9px; background: #fff; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  header p { margin: 1px 0 0; font-size: 12px; opacity: .75; }
+
+  nav {
+    display: flex; overflow-x: auto; gap: 4px;
+    background: var(--blue-dark); padding: 0 8px;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    flex: 0 0 auto; background: none; border: 0; color: #cfd9e6;
+    font: inherit; font-size: 14px; padding: 11px 12px; cursor: pointer;
+    border-bottom: 3px solid transparent;
+  }
+  nav button[aria-current="true"] { color: #fff; border-bottom-color: var(--gold); }
+
+  main { padding: 14px; max-width: 640px; margin: 0 auto; }
+  section[hidden] { display: none; }
+
+  .card {
+    background: var(--card); border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 2px rgba(16,21,28,.06); margin-bottom: 12px;
+  }
+  .next { text-align: center; }
+  .next .opponent { font-size: 22px; font-weight: 650; margin: 6px 0 2px; }
+  .next .when { color: var(--muted); font-size: 14px; }
+  .countdown {
+    display: flex; justify-content: center; gap: 10px; margin-top: 14px;
+  }
+  .countdown div {
+    background: var(--blue); color: #fff; border-radius: 10px;
+    min-width: 62px; padding: 8px 4px;
+  }
+  .countdown b { display: block; font-size: 22px; line-height: 1.1; }
+  .countdown span { font-size: 11px; opacity: .75; }
+  .tag {
+    display: inline-block; font-size: 11px; letter-spacing: .4px;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  .match { display: flex; align-items: center; gap: 10px; padding: 9px 0; }
+  .match + .match { border-top: 1px solid var(--line); }
+  .match .date { width: 52px; font-size: 12px; color: var(--muted); flex: 0 0 auto; }
+  .match .teams { flex: 1; min-width: 0; font-size: 14px; }
+  .match .teams em { font-style: normal; font-weight: 650; }
+  .match .score {
+    font-weight: 700; font-variant-numeric: tabular-nums; flex: 0 0 auto;
+  }
+  .match .score.pending { color: var(--muted); font-weight: 500; }
+  .goals { font-size: 12px; color: var(--muted); padding: 0 0 8px 62px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--muted); font-weight: 600;
+    padding: 0 4px 6px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 7px 3px; border-bottom: 1px solid var(--line); }
+  td.num, th.num {
+    text-align: right; font-variant-numeric: tabular-nums;
+    width: 1%; white-space: nowrap; padding-left: 7px;
+  }
+  /* max-width:0 with width:100% lets the name column take whatever is left and
+     truncate, instead of pushing the numbers off a 375px screen. */
+  td.name, th.name {
+    max-width: 0; width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  tr.us td { background: rgba(255,200,1,.16); font-weight: 650; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .empty { color: var(--muted); text-align: center; padding: 22px 0; }
+  footer {
+    text-align: center; color: var(--muted); font-size: 12px;
+    padding: 6px 16px 22px;
+  }
+  button.push {
+    display: block; width: 100%; margin-top: 8px; padding: 12px;
+    border: 0; border-radius: 11px; background: var(--blue); color: #fff;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button.push[disabled] { background: var(--line); color: var(--muted); }
+  pre.sub {
+    white-space: pre-wrap; word-break: break-all; font-size: 11px;
+    background: var(--bg); padding: 10px; border-radius: 9px; margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <img src="icons/icon-192.png" alt="">
+  <div>
+    <h1>Dynovia Dynów</h1>
+    <p id="season">—</p>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="next" aria-current="true">Najbliższy</button>
+  <button data-tab="results">Wyniki</button>
+  <button data-tab="stats">Statystyki</button>
+  <button data-tab="table">Tabela</button>
+  <button data-tab="sources">Źródła</button>
+</nav>
+
+<main>
+  <section id="next"></section>
+  <section id="results" hidden></section>
+  <section id="stats" hidden></section>
+  <section id="table" hidden></section>
+  <section id="sources" hidden></section>
+</main>
+
+<footer id="updated"></footer>
+<script src="app.js"></script>
+</body>
+</html>

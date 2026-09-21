@@ -74,3 +74,13 @@ def test_one_source_is_enough():
     merged, conflicts = merge.merge({"90minut": view()})
     assert merged.date == dt.date(2026, 10, 10)
     assert conflicts == []
+
+
+def test_the_readable_spelling_wins_even_when_another_source_leads():
+    # PZPN is the source of record but writes "Grodziszczanka Grodzisko Dln.".
+    views = {
+        "laczynaspilka": view(home="Grodziszczanka Grodzisko Dln.", away="Dynovia Dynów"),
+        "regiowyniki": view(home="Grodziszczanka Grodzisko Dolne", away="Dynovia Dynów"),
+    }
+    merged, _ = merge.merge(views)
+    assert merged.home == "Grodziszczanka Grodzisko Dolne"

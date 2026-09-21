@@ -11,7 +11,7 @@
  * score is worse than an honest "no connection".
  */
 
-const SHELL = "dynovia-shell-v1";
+const SHELL = "dynovia-shell-v2";
 const DATA = "dynovia-data-v1";
 const FILES = [
   "./",

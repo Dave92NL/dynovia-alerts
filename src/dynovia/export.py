@@ -119,9 +119,15 @@ def build(conn, season: str) -> dict[str, object]:
         for row in db.source_status(conn)
     ]
 
+    # Not the wall clock: that changes on every run and would make these files
+    # differ every time, so Actions would commit and Cloudflare would rebuild
+    # even when nothing was fetched. The newest fetch is what "generated"
+    # actually means here.
+    newest = max((row["last"] for row in db.source_status(conn)), default="")
+
     return {
         "meta.json": {
-            "generatedAt": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+            "generatedAt": newest[:19] or None,
             "season": season,
             "club": CLUB,
             # Not a secret: the page needs it to subscribe at all.

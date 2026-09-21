@@ -17,6 +17,7 @@ as fragile as it sounds - see _icon_kind.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import logging
 import re
 import sqlite3
@@ -297,9 +298,23 @@ def parse_schedule(text: str) -> list["MatchData"]:
 def import_schedule(
     conn: sqlite3.Connection, path: Path, fetched_at: dt.datetime
 ) -> list[tuple[int, merge.Conflict]]:
+    """Re-imported only when the file actually changed.
+
+    Storing it unconditionally restamped every fetched_at on every run, so the
+    database and the exported JSON differed every time and Actions committed
+    on every tick - which is exactly what "commit only when changed" was meant
+    to prevent.
+    """
     if not path.is_file():
         return []
-    matches = parse_schedule(path.read_text(encoding="utf-8"))
+
+    text = path.read_text(encoding="utf-8")
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if db.get_setting(conn, "schedule_hash") == digest:
+        return []
+    db.set_setting(conn, "schedule_hash", digest)
+
+    matches = parse_schedule(text)
     if not matches:
         log.warning("terminarz PZPN %s: nic nie sparsowano", path.name)
         return []

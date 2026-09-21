@@ -18,7 +18,7 @@ import re
 from dynovia import db, differ, players, stats
 from dynovia.config import ROSTER_PATH
 from dynovia.models import normalize_player, season_for
-from dynovia.notify import telegram
+from dynovia.notify import telegram, webpush
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +34,8 @@ HELP = """Komendy:
 /zrodla - stan każdego źródła
 /asysty - przypisz asysty do bramek
 /asysta <nr> <nazwisko> - to samo z palca
-/konflikty - nierozstrzygnięte rozbieżności"""
+/konflikty - nierozstrzygnięte rozbieżności
+/push - sprawdź, czy powiadomienia na telefon działają"""
 
 
 def _season(conn) -> str:
@@ -296,8 +297,25 @@ def cmd_assist(conn, args: str) -> tuple[str, list | None]:
     return f"Zapisane: asysta {player} przy bramce nr {number}.", None
 
 
+def cmd_push(conn, args: str) -> tuple[str, list | None]:
+    """Worth having permanently: iOS drops a push subscription after a few
+    weeks of not opening the app, and it does so silently. This is the only way
+    to find out before a match instead of after one."""
+    if not webpush.configured():
+        return (
+            "Push nieskonfigurowany - brak VAPID_PRIVATE_KEY albo "
+            "PUSH_SUBSCRIPTION w sekretach.",
+            None,
+        )
+    problem = webpush.send("Dynovia Alerts\nTest - jeśli to widzisz, push działa.")
+    if problem:
+        return problem, None
+    return "Wysłałem push. Sprawdź ekran blokady telefonu.", None
+
+
 COMMANDS = {
     "nastepny": cmd_next,
+    "push": cmd_push,
     "asysty": cmd_assists,
     "asysta": cmd_assist,
     "ostatni": cmd_last,

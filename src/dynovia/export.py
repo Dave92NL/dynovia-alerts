@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 
 from dynovia import db, stats
-from dynovia.config import ROOT
+from dynovia.config import ROOT, VAPID_PUBLIC_KEY
 from dynovia.merge import GOAL_TRUST
 from dynovia.models import CLUB, normalize_team, season_for
 
@@ -124,6 +124,8 @@ def build(conn, season: str) -> dict[str, object]:
             "generatedAt": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
             "season": season,
             "club": CLUB,
+            # Not a secret: the page needs it to subscribe at all.
+            "vapidPublicKey": VAPID_PUBLIC_KEY,
         },
         "matches.json": matches,
         "stats.json": players,

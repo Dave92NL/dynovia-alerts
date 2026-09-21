@@ -16,7 +16,7 @@ import sys
 from dynovia import bot, db, differ, export, models, players, protokol
 from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH, SCHEDULE_PATH
 from dynovia.differ import WARSAW, kickoff
-from dynovia.notify import telegram
+from dynovia.notify import telegram, webpush
 from dynovia.scrapers import SCRAPERS
 from dynovia.snapshot import load_fixtures
 
@@ -172,6 +172,11 @@ def _conflict_events(conn, conflicts) -> list[differ.Event]:
     return events
 
 
+def _warn_once(conn, match_id: int, text: str) -> None:
+    if db.mark_sent(conn, match_id, "push_expired"):
+        telegram.send(text)
+
+
 def notify(conn, events: list[differ.Event], *, dry_run: bool) -> None:
     ids = db.match_ids(conn)
     for event in events:
@@ -189,6 +194,11 @@ def notify(conn, events: list[differ.Event], *, dry_run: bool) -> None:
                 buttons=event.buttons,
                 as_html=event.text.startswith("<pre>"),
             )
+            # Push is the second channel and never the reason a run fails:
+            # it only reports back when the subscription itself has died.
+            expired = webpush.send(event.text)
+            if expired:
+                _warn_once(conn, match_id, expired)
         except Exception:  # noqa: BLE001
             # Release the reservation so the next run retries instead of
             # swallowing the message for good.

@@ -31,6 +31,12 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
 
+# Web push. The public key is not a secret - it is served in meta.json and
+# read by the page. The other two are.
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+PUSH_SUBSCRIPTION = os.environ.get("PUSH_SUBSCRIPTION", "")
+
 DATA_DIR = ROOT / "data"
 CACHE_DIR = ROOT / ".cache"
 FIXTURES_DIR = ROOT / "tests" / "fixtures"

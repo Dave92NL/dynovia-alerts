@@ -8,6 +8,7 @@ dependencies = [
     "selectolax>=0.3.21",
     # Windows ships no tz database, so zoneinfo("Europe/Warsaw") needs this.
     "tzdata",
+    "pywebpush",
 ]
 
 [project.optional-dependencies]

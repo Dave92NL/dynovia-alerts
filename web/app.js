@@ -215,6 +215,16 @@ function renderPush() {
   $("enablePush").addEventListener("click", subscribe);
 }
 
+/* Safari wants a BufferSource here, not the base64url string that Chrome
+   accepts, and iOS is the whole point of this app. */
+function urlBase64ToUint8Array(value) {
+  const padded = (value + "=".repeat((4 - (value.length % 4)) % 4))
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const raw = atob(padded);
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
 async function subscribe() {
   const button = $("enablePush");
   button.disabled = true;
@@ -225,10 +235,14 @@ async function subscribe() {
       return;
     }
     const meta = await fetch("data/meta.json").then((r) => r.json());
+    if (!meta.vapidPublicKey) {
+      button.textContent = "Brak klucza VAPID - najpierw ustaw sekrety";
+      return;
+    }
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: meta.vapidPublicKey,
+      applicationServerKey: urlBase64ToUint8Array(meta.vapidPublicKey),
     });
     button.textContent = "Gotowe - skopiuj poniższe";
     $("subOut").innerHTML =

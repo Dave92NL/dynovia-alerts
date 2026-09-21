@@ -56,12 +56,14 @@ function renderNext() {
   const where = m.atHome ? "u siebie" : "na wyjeździe";
   $("next").innerHTML = "";
   $("next").append(
-    el(`<div class="card next">
-      <span class="tag">Najbliższy mecz · ${esc(where)}</span>
-      <div class="opponent">${esc(opponent)}</div>
-      <div class="when">${DAY[at.getDay()]}, ${shortDate(m.date)}${
-        m.time ? " o " + esc(m.time) : ""
-      }${m.round ? " · kolejka " + m.round : ""}</div>
+    el(`<div class="card next match-hero">
+      <div class="hero-top">
+        <span class="tag">Najbliższy mecz · ${esc(where)}</span>
+        <div class="opponent">${esc(opponent)}</div>
+        <div class="when">${DAY[at.getDay()]}, ${shortDate(m.date)}${
+          m.time ? " o " + esc(m.time) : ""
+        }${m.round ? " · kolejka " + m.round : ""}</div>
+      </div>
       <div class="countdown" id="cd"></div>
     </div>`)
   );
@@ -99,8 +101,11 @@ function renderResults() {
     box.innerHTML = '<div class="card empty">Jeszcze nic nie rozegrano.</div>';
     return;
   }
-  const card = el('<div class="card"></div>');
+  const card = el('<div class="card results-card"></div>');
   for (const m of played) {
+    const ours = m.atHome ? m.homeScore : m.awayScore;
+    const theirs = m.atHome ? m.awayScore : m.homeScore;
+    const result = ours > theirs ? "win" : ours < theirs ? "loss" : "draw";
     card.append(
       el(`<div class="match">
         <div class="date">${esc(shortDate(m.date))}</div>
@@ -109,7 +114,7 @@ function renderResults() {
             ? `<em>${esc(m.home)}</em> – ${esc(m.away)}`
             : `${esc(m.home)} – <em>${esc(m.away)}</em>`
         }</div>
-        <div class="score">${m.homeScore}–${m.awayScore}</div>
+        <div class="score ${result}">${m.homeScore}–${m.awayScore}</div>
       </div>`)
     );
     if (m.scorers.length) {
@@ -143,7 +148,16 @@ function renderStats() {
       </tr>`
     )
     .join("");
-  box.innerHTML = `<div class="card"><table>
+  const totalGoals = rows.reduce((sum, p) => sum + p.goals, 0);
+  const totalAssists = rows.reduce((sum, p) => sum + p.assists, 0);
+  const topScorer = rows.slice().sort((a, b) => b.goals - a.goals)[0];
+  box.innerHTML = `<div class="section-heading"><h2>Statystyki zespołu</h2><span>sezon</span></div>
+    <div class="stat-summary">
+      <div><b>${totalGoals}</b><span>gole</span></div>
+      <div><b>${totalAssists}</b><span>asysty</span></div>
+      <div><b>${topScorer ? esc(topScorer.name.split(" ")[0]) : "–"}</b><span>lider strzelców</span></div>
+    </div>
+    <div class="card table-card"><table>
     <thead><tr><th class="name">Zawodnik</th><th class="num">M</th><th class="num">Min</th>
     <th class="num">G</th><th class="num">A</th><th class="num">🟨</th></tr></thead>
     <tbody>${body}</tbody></table></div>
@@ -168,7 +182,9 @@ function renderTable() {
       </tr>`
     )
     .join("");
-  box.innerHTML = `<div class="card"><table>
+  const ours = rows.find((r) => r.us);
+  box.innerHTML = `<div class="section-heading"><h2>Tabela ligowa</h2>${ours ? `<span>${ours.position}. miejsce</span>` : ""}</div>
+    <div class="card table-card"><table>
     <thead><tr><th class="num">#</th><th class="name">Drużyna</th><th class="num">M</th>
     <th class="num">Pkt</th><th class="num">+/-</th></tr></thead>
     <tbody>${body}</tbody></table></div>`;

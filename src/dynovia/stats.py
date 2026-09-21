@@ -81,10 +81,27 @@ def player_summary(conn: sqlite3.Connection, season: str, player: str) -> dict:
     ).fetchall()
 
     goals = dict(goals_by_player(conn, season)).get(row["name"], 0)
+    assists = dict(assists_by_player(conn, season)).get(row["name"], 0)
     return {
         "name": row["name"],
         "played": played,
         "minutes": minutes or 0,
         "goals": goals,
+        "assists": assists,
         "cards": {card["color"]: card["n"] for card in cards},
     }
+
+
+def assists_by_player(conn: sqlite3.Connection, season: str) -> list[tuple[str, int]]:
+    """Confirmed assists only. An unconfirmed one is a guess, and a guess is
+    not a statistic."""
+    rows = conn.execute(
+        "SELECT p.name, COUNT(*) AS n FROM assists a"
+        " JOIN players p ON p.id = a.player_id"
+        " JOIN goals g ON g.id = a.goal_id"
+        " JOIN matches m ON m.id = g.match_id"
+        " WHERE m.season = ? AND a.confirmed = 1"
+        " GROUP BY p.id ORDER BY n DESC, p.name",
+        (season,),
+    ).fetchall()
+    return [(row["name"], row["n"]) for row in rows]

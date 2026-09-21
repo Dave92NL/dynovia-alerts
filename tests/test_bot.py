@@ -114,3 +114,43 @@ def test_polling_advances_the_offset_even_when_a_command_blows_up(conn, monkeypa
     bot.poll(conn)
     assert db.get_setting(conn, bot.OFFSET_KEY) == "42"
     assert sent
+
+
+def test_the_prose_quoted_is_the_one_describing_the_goal():
+    report = (
+        "Dynovia Dynów 4:1 Markovia Markowa\n"
+        "Bramki: Kłoda, Londono\n"
+        "Dynovia : Bielaszka, Kozioł, Kłoda, Londono\n"
+        "Wynik meczu otworzył Arkadiusz Kłoda dostawiając nogę po dokładnym "
+        "dograniu piłki przez Ruslana Kovtoka. "
+        "Drugi gol to indywidualna akcja Michaela Londono zakończona strzałem."
+    )
+    # Not the lineup and not the goal line, both of which name him too.
+    assert bot._paragraph_about(report, "Arkadiusz Kłoda").startswith("Wynik meczu")
+    # Polish inflects the name and the surname is not the last word.
+    assert "indywidualna" in bot._paragraph_about(report, "Michael Londono Silva")
+
+
+def test_a_report_without_prose_quotes_nothing(conn):
+    assert bot._paragraph_about("Dynovia : Bielaszka, Kozioł", "Tomasz Bielaszka") == ""
+
+
+def test_an_assist_only_counts_once_answered(conn):
+    goal = db.goals_needing_assist(conn, "2026/27")[0]
+    from dynovia import stats
+
+    assert stats.assists_by_player(conn, "2026/27") == []
+    db.store_assist(conn, goal["id"], "Filip Goleś")
+    assert stats.assists_by_player(conn, "2026/27") == [("Filip Goleś", 1)]
+
+
+def test_no_assist_is_an_answer_and_stops_the_asking(conn):
+    goal = db.goals_needing_assist(conn, "2026/27")[0]
+    bot.handle_callback(conn, f"a:{goal['id']}:x")
+    assert goal["id"] not in {g["id"] for g in db.goals_needing_assist(conn, "2026/27")}
+
+
+def test_nobody_assists_their_own_goal(conn):
+    goal = db.goals_needing_assist(conn, "2026/27")[0]
+    text, _ = bot.handle_command(conn, f"/asysta {goal['id']} {goal['scorer']}")
+    assert "nie może asystować sam sobie" in text

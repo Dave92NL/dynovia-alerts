@@ -30,6 +30,8 @@ class Event:
     """Together with the match id this is the deduplication key, so it has to
     carry the new value for anything that can change more than once."""
     text: str
+    buttons: list | None = None
+    """Inline keyboard, for the events that ask a question rather than report."""
 
 
 def kickoff(match: MatchData) -> dt.datetime | None:

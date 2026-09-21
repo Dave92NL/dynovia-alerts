@@ -13,7 +13,7 @@ import datetime as dt
 import logging
 import sys
 
-from dynovia import bot, db, differ, players, protokol
+from dynovia import bot, db, differ, models, players, protokol
 from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH, SCHEDULE_PATH
 from dynovia.differ import WARSAW, kickoff
 from dynovia.notify import telegram
@@ -109,6 +109,25 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
     imported = pzpn + protokol.import_directory(conn, PROTOCOLS_DIR, registry)
     if imported and not first_run:
         events += _conflict_events(conn, imported)
+    if not first_run:
+        events += _assist_questions(conn)
+    return events
+
+
+MAX_ASSIST_QUESTIONS = 3
+"""Per run. These are questions, not a report - a backlog dumped all at once
+is a chore, and notifications_sent keeps each one to a single asking."""
+
+
+def _assist_questions(conn) -> list[differ.Event]:
+    keys = {match_id: key for key, match_id in db.match_ids(conn).items()}
+    season = models.season_for(dt.date.today())
+    events = []
+    for goal in db.goals_needing_assist(conn, season)[:MAX_ASSIST_QUESTIONS]:
+        text, buttons = bot.assist_question(conn, goal)
+        events.append(
+            differ.Event(keys[goal["match_id"]], f"assist:{goal['id']}", text, buttons)
+        )
     return events
 
 
@@ -149,7 +168,11 @@ def notify(conn, events: list[differ.Event], *, dry_run: bool) -> None:
         if not db.mark_sent(conn, match_id, event.kind):
             continue  # already went out on an earlier tick
         try:
-            telegram.send(event.text)
+            telegram.send(
+                event.text,
+                buttons=event.buttons,
+                as_html=event.text.startswith("<pre>"),
+            )
         except Exception:  # noqa: BLE001
             # Release the reservation so the next run retries instead of
             # swallowing the message for good.

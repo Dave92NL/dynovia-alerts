@@ -123,11 +123,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS goals_once
 CREATE TABLE IF NOT EXISTS assists (
     id        INTEGER PRIMARY KEY,
     goal_id   INTEGER NOT NULL REFERENCES goals(id),
-    player_id INTEGER NOT NULL REFERENCES players(id),
+    -- NULL means the owner confirmed there was no assist, which is an answer
+    -- and has to be recorded, or the same goal gets asked about for ever.
+    player_id INTEGER REFERENCES players(id),
     source    TEXT    NOT NULL,               -- llm|manual
     confirmed INTEGER NOT NULL DEFAULT 0,     -- only confirmed ones count
     UNIQUE (goal_id, player_id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS assists_once ON assists (goal_id);
 
 CREATE TABLE IF NOT EXISTS cards (
     match_id  INTEGER NOT NULL REFERENCES matches(id),
@@ -700,3 +703,70 @@ def source_status(conn) -> list[sqlite3.Row]:
 def resolve_conflict(conn, conflict_id: int) -> None:
     with conn:
         conn.execute("UPDATE conflicts SET resolved = 1 WHERE id = ?", (conflict_id,))
+
+
+def goals_needing_assist(conn: sqlite3.Connection, season: str) -> list[sqlite3.Row]:
+    """Goals nobody has been credited with setting up yet.
+
+    Only goals from the most trusted source that saw the match: the same goal
+    reported by two sources is one goal, and asking twice about it would put
+    two assists on one shot.
+    """
+    rows = conn.execute(
+        "SELECT g.id, g.match_id, g.minute, g.source, p.name AS scorer,"
+        "       m.home, m.away, m.date"
+        " FROM goals g"
+        " JOIN players p ON p.id = g.player_id"
+        " JOIN matches m ON m.id = g.match_id"
+        " WHERE m.season = ?"
+        "   AND NOT EXISTS (SELECT 1 FROM assists a WHERE a.goal_id = g.id)"
+        " ORDER BY m.date, g.minute",
+        (season,),
+    ).fetchall()
+
+    best: dict[int, str] = {}
+    for row in rows:
+        rank = merge.GOAL_TRUST.index(row["source"]) if row["source"] in merge.GOAL_TRUST else 99
+        current = best.get(row["match_id"])
+        if current is None or rank < current[0]:
+            best[row["match_id"]] = (rank, row["source"])
+    return [row for row in rows if best[row["match_id"]][1] == row["source"]]
+
+
+def store_assist(
+    conn: sqlite3.Connection,
+    goal_id: int,
+    player: str | None,
+    source: str = "manual",
+) -> None:
+    """Record the owner's answer. player=None means "nobody assisted", which is
+    as much an answer as a name. Never called with a guess - an unconfirmed
+    assist does not belong in the statistics."""
+    with conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO assists (goal_id, player_id, source, confirmed)"
+            " VALUES (?, ?, ?, 1)",
+            (goal_id, _player_id(conn, player) if player else None, source),
+        )
+
+
+def match_squad(conn: sqlite3.Connection, match_id: int) -> list[str]:
+    """Who actually played, for the buttons. Falls back to nobody rather than
+    the whole roster - a list of 24 names is not a choice, it is a haystack."""
+    return [
+        row["name"]
+        for row in conn.execute(
+            "SELECT DISTINCT p.name FROM appearances a"
+            " JOIN players p ON p.id = a.player_id"
+            " WHERE a.match_id = ? ORDER BY p.name",
+            (match_id,),
+        )
+    ]
+
+
+def report_for(conn: sqlite3.Connection, match_id: int) -> str:
+    row = conn.execute(
+        "SELECT text FROM articles WHERE match_id = ? ORDER BY LENGTH(text) DESC LIMIT 1",
+        (match_id,),
+    ).fetchone()
+    return row["text"] if row else ""

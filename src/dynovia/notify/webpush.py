@@ -13,29 +13,41 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass
 
 from dynovia.config import PUSH_SUBSCRIPTION, VAPID_PRIVATE_KEY
 
 log = logging.getLogger(__name__)
 
-# Who to contact about a misbehaving push. Required by the spec, never used.
-CLAIMS = {"sub": "mailto:dynovia-alerts@example.invalid"}
+# Required by the spec so the push service can reach whoever runs this. Apple
+# rejects an unroutable address with a flat 403, so it points at the repository
+# rather than at a made-up mailbox - and the owner's own address stays out of
+# a third party's logs.
+CLAIMS = {"sub": "https://github.com/Dave92NL/dynovia-alerts"}
 
 EXPIRED = (404, 410)
 """The push service says this subscription is dead. iOS does this on its own
 after a while, so it is a thing to report, not a bug to fix."""
 
 
+@dataclass(frozen=True, slots=True)
+class Problem:
+    message: str
+    expired: bool
+    """Only an expired subscription is worth interrupting the owner over; the
+    rest is for whoever asked with /push."""
+
+
 def configured() -> bool:
     return bool(PUSH_SUBSCRIPTION and VAPID_PRIVATE_KEY)
 
 
-def send(text: str) -> str | None:
-    """Push one message. Returns a message for the owner if the subscription
-    has expired, otherwise None. Never raises: a broken push must not stop a
-    Telegram notification that already went out."""
+def send(text: str) -> Problem | None:
+    """Push one message. Returns what went wrong, or None on success. Never
+    raises: a broken push must not stop a Telegram notification that already
+    went out."""
     if not configured():
-        return None
+        return Problem("Push nieskonfigurowany.", expired=False)
 
     try:
         from pywebpush import WebPushException, webpush
@@ -50,14 +62,16 @@ def send(text: str) -> str | None:
         return None
     except WebPushException as exc:
         status = getattr(exc.response, "status_code", None)
+        detail = (getattr(exc.response, "text", "") or "")[:160]
         if status in EXPIRED:
             log.warning("push subscription expired (%s)", status)
-            return (
+            return Problem(
                 "🔕 Subskrypcja push wygasła - otwórz aplikację z ekranu głównego, "
-                "zakładka Źródła, i włącz powiadomienia jeszcze raz."
+                "zakładka Źródła, i włącz powiadomienia jeszcze raz.",
+                expired=True,
             )
-        log.exception("push failed (%s)", status)
-        return None
-    except Exception:  # noqa: BLE001
+        log.error("push failed (%s): %s", status, detail)
+        return Problem(f"Push odrzucony: HTTP {status}. {detail}".strip(), expired=False)
+    except Exception as exc:  # noqa: BLE001
         log.exception("push failed")
-        return None
+        return Problem(f"Push nie wyszedł: {type(exc).__name__}", expired=False)

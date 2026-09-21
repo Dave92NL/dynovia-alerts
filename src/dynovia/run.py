@@ -196,9 +196,9 @@ def notify(conn, events: list[differ.Event], *, dry_run: bool) -> None:
             )
             # Push is the second channel and never the reason a run fails:
             # it only reports back when the subscription itself has died.
-            expired = webpush.send(event.text)
-            if expired:
-                _warn_once(conn, match_id, expired)
+            problem = webpush.send(event.text)
+            if problem and problem.expired:
+                _warn_once(conn, match_id, problem.message)
         except Exception:  # noqa: BLE001
             # Release the reservation so the next run retries instead of
             # swallowing the message for good.

@@ -8,7 +8,12 @@
   "home": "Dynovia Dynów",
   "homeScore": 1,
   "round": 1,
-  "scorers": [],
+  "scorers": [
+   {
+    "minute": null,
+    "player": "Ruslan Kovtok"
+   }
+  ],
   "status": "finished",
   "time": "17:00"
  },

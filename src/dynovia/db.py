@@ -304,20 +304,26 @@ def _remerge(
         _to_row(merged) | {"id": match_id, "updated_at": stamp},
     )
     for conflict in conflicts:
-        conn.execute(
-            "INSERT OR IGNORE INTO conflicts (match_id, field, source_a, value_a,"
-            " source_b, value_b, detected_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                match_id,
-                conflict.field,
-                conflict.source_a,
-                conflict.value_a,
-                conflict.source_b,
-                conflict.value_b,
-                stamp,
-            ),
-        )
+        record_conflict(conn, match_id, conflict, stamp)
     return conflicts
+
+
+def record_conflict(
+    conn: sqlite3.Connection, match_id: int, conflict: merge.Conflict, stamp: str
+) -> None:
+    conn.execute(
+        "INSERT OR IGNORE INTO conflicts (match_id, field, source_a, value_a,"
+        " source_b, value_b, detected_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            match_id,
+            conflict.field,
+            conflict.source_a,
+            conflict.value_a,
+            conflict.source_b,
+            conflict.value_b,
+            stamp,
+        ),
+    )
 
 
 def stored_matches(conn: sqlite3.Connection) -> dict[MatchKey, MatchData]:
@@ -420,6 +426,10 @@ def store_reports(
             )
 
 
+def _now() -> str:
+    return dt.datetime.now(dt.UTC).isoformat()
+
+
 def _player_id(conn: sqlite3.Connection, name: str) -> int:
     conn.execute(
         "INSERT OR IGNORE INTO players (name, normalized_name) VALUES (?, ?)",
@@ -488,6 +498,9 @@ def _store_player_rows(
                 continue
             player_id, conflict = _identify(conn, row.player, source, registry)
             if conflict is not None:
+                # Stored as well as returned: an unanswered question has to
+                # survive until /konflikty can put buttons under it.
+                record_conflict(conn, match_id, conflict, _now())
                 found.append((match_id, conflict))
                 continue
             conn.execute(

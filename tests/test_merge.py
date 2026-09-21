@@ -20,12 +20,15 @@ def view(**overrides) -> MatchData:
 
 
 def test_the_trusted_source_wins_regardless_of_write_order():
-    views = {
-        "regiowyniki": view(date=dt.date(2026, 10, 11)),
-        "90minut": view(date=dt.date(2026, 10, 10)),
-    }
-    merged, _ = merge.merge(views)
-    assert merged.date == dt.date(2026, 10, 10)
+    # Round 9: 90minut says 10 October, regiowyniki says the 11th, and the PZPN
+    # schedule says the 11th - which is why regiowyniki leads on dates.
+    for order in ("regiowyniki", "90minut"), ("90minut", "regiowyniki"):
+        views = {
+            order[0]: view(date=dt.date(2026, 10, 11 if order[0] == "regiowyniki" else 10)),
+            order[1]: view(date=dt.date(2026, 10, 10 if order[1] == "90minut" else 11)),
+        }
+        merged, _ = merge.merge(views)
+        assert merged.date == dt.date(2026, 10, 11)
 
 
 def test_the_loser_is_still_reported():
@@ -35,7 +38,7 @@ def test_the_loser_is_still_reported():
     }
     _, conflicts = merge.merge(views)
     assert [(c.field, c.source_a, c.source_b) for c in conflicts] == [
-        ("date", "90minut", "regiowyniki")
+        ("date", "regiowyniki", "90minut")
     ]
 
 

@@ -8,6 +8,10 @@
 #
 # Sztab szkoleniowy celowo pominięty - trener i kierownicy nie wchodzą
 # do statystyk zawodników.
+#
+# Zapis "Kanoniczne Imię = alias" przypina pisownię, która sama w sobie jest
+# niejednoznaczna. "Goleś" w składach futbolowo to Filip - potwierdzone przez
+# właściciela na podstawie protokołu PZPN, 2026-09-20.
 
 # bramkarze
 Tomasz Bielaszka
@@ -17,7 +21,7 @@ Sebastian Urbaniak
 # obrońcy i pomocnicy
 Andrzej Goleś
 Arkadiusz Kłoda
-Filip Goleś
+Filip Goleś = Goleś
 Grzegorz Szczepański
 Jakob Dzik
 Jakub Bury

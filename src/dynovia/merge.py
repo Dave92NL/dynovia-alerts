@@ -20,8 +20,12 @@ from dataclasses import dataclass
 from dynovia.models import MatchData
 
 TRUST: dict[str, tuple[str, ...]] = {
-    "date": ("90minut", "regiowyniki", "futbolowo", "podkarpacielive"),
-    "time": ("90minut", "regiowyniki", "futbolowo", "podkarpacielive"),
+    # regiowyniki ahead of 90minut, against the plan's table. The two sources
+    # disagreed about rounds 9 and 10; the PZPN schedule the owner checked gives
+    # 11.10 and 18.10, which is regiowyniki both times. regiowyniki also carries
+    # kickoff times that 90minut leaves blank.
+    "date": ("regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
+    "time": ("regiowyniki", "90minut", "futbolowo", "podkarpacielive"),
     "score": ("90minut", "regiowyniki", "podkarpacielive", "futbolowo"),
     # Not in the plan's table, because the plan did not expect the sources to
     # disagree about the league's name. 90minut prints "VI liga" (its generic

@@ -21,15 +21,27 @@ ROSTER_FILE = "kadra.txt"
 
 
 def load_roster(path: Path) -> dict[str, str]:
-    """A registry: {normalized name: name as written}. One player per line,
-    blank lines and #-comments ignored."""
+    """A registry: {normalized spelling: canonical name}. One player per line,
+    blank lines and #-comments ignored.
+    A line may also pin a spelling that would otherwise be ambiguous:
+
+        Filip Goleś = Goleś, F. Goleś
+
+    which is how a confirmed answer stops the same question coming back.
+    """
     if not path.is_file():
         return {}
     registry = {}
     for line in path.read_text(encoding="utf-8").splitlines():
-        name = line.split("#")[0].strip()
-        if name:
-            registry[normalize_player(name)] = name
+        entry = line.split("#")[0].strip()
+        if not entry:
+            continue
+        canonical, _, aliases = entry.partition("=")
+        canonical = canonical.strip()
+        registry[normalize_player(canonical)] = canonical
+        for alias in aliases.split(","):
+            if alias.strip():
+                registry[normalize_player(alias)] = canonical
     return registry
 
 
@@ -78,9 +90,11 @@ def resolve(written: str, registry: dict[str, str]) -> tuple[str | None, list[st
         return registry[key], []
 
     words = key.split()
-    candidates = [
+    # By canonical name: a player with a pinned alias appears under several
+    # keys and would otherwise look like several candidates.
+    candidates = {
         name for normalized, name in registry.items() if _fits(words, normalized.split())
-    ]
+    }
     if len(candidates) == 1:
-        return candidates[0], []
+        return candidates.pop(), []
     return None, sorted(candidates)

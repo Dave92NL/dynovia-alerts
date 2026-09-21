@@ -65,3 +65,22 @@ def test_the_roster_file_ignores_blanks_and_comments(tmp_path):
 
 def test_a_missing_roster_file_is_empty_not_an_error():
     assert load_roster(__import__("pathlib").Path("nie-ma-takiego.txt")) == {}
+
+
+def test_a_pinned_alias_settles_an_ambiguous_surname(tmp_path):
+    # "Goleś" fits both brothers; the owner confirmed from the PZPN protocol
+    # that the one in futbolowo's lineups is Filip.
+    path = tmp_path / "kadra.txt"
+    path.write_text("Andrzej Goleś\nFilip Goleś = Goleś\n", encoding="utf-8")
+    registry = load_roster(path)
+
+    assert resolve("Goleś", registry) == ("Filip Goleś", [])
+    assert resolve("Andrzej Goleś", registry) == ("Andrzej Goleś", [])
+
+
+def test_a_pinned_player_is_not_counted_twice_as_a_candidate(tmp_path):
+    # He is in the registry under two keys; without deduplication that reads
+    # as two candidates and the name goes back to being a question.
+    path = tmp_path / "kadra.txt"
+    path.write_text("Filip Goleś = Goleś\n", encoding="utf-8")
+    assert resolve("F. Goleś", load_roster(path)) == ("Filip Goleś", [])

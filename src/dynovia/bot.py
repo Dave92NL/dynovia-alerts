@@ -176,7 +176,11 @@ def cmd_sources(conn, args: str) -> tuple[str, list | None]:
     lines = []
     for row in rows:
         last = dt.datetime.fromisoformat(row["last"]).astimezone(differ.WARSAW)
-        lines.append(f"{row['source']:<16} {row['matches']:>3} mecz. {last:%d.%m %H:%M}")
+        failures = int(db.get_setting(conn, f"failures:{row['source']}") or 0)
+        alarm = f"  ⚠️x{failures}" if failures else ""
+        lines.append(
+            f"{row['source']:<16} {row['matches']:>3} mecz. {last:%d.%m %H:%M}{alarm}"
+        )
     return telegram.pre("\n".join(lines)), None
 
 
@@ -364,11 +368,18 @@ def _answer_assist(conn, goal_id: int, choice: str) -> str:
 
 def poll(conn) -> None:
     """Answer whatever was sent since the last run."""
-    offset = int(db.get_setting(conn, OFFSET_KEY) or 0)
+    stored = db.get_setting(conn, OFFSET_KEY)
     try:
-        updates = telegram.get_updates(offset)
+        updates = telegram.get_updates(int(stored or 0))
     except Exception:  # noqa: BLE001 - a dead bot must not stop the scraping
         log.exception("getUpdates failed")
+        return
+
+    if stored is None and updates:
+        # First poll on a fresh database. Telegram keeps a day of updates, and
+        # answering all of yesterday's commands at once is noise, not service.
+        db.set_setting(conn, OFFSET_KEY, updates[-1]["update_id"] + 1)
+        log.info("pominieto %d zaleglych komend przy pierwszym uruchomieniu", len(updates))
         return
 
     for update in updates:

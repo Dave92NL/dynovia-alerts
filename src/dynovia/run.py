@@ -58,7 +58,21 @@ def is_due(last: dt.datetime | None, matches, now: dt.datetime) -> bool:
     return local.hour >= 6 and last_local.date() < local.date()
 
 
-def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
+FAILURES_BEFORE_ALERT = 3
+"""A source blips. Three runs in a row is a source that is actually broken."""
+
+
+def _note_failure(conn, name: str, *, quiet: bool) -> None:
+    count = int(db.get_setting(conn, f"failures:{name}") or 0) + 1
+    db.set_setting(conn, f"failures:{name}", count)
+    if count == FAILURES_BEFORE_ALERT and not quiet:
+        try:
+            telegram.send(f"⚠️ Źródło {name} nie działa od {count} runów z rzędu.")
+        except Exception:  # noqa: BLE001
+            log.exception("failure alert could not be sent")
+
+
+def collect(conn, now: dt.datetime, *, offline: bool, quiet: bool = False) -> list[differ.Event]:
     # A first run pulls a whole season from every source at once. Sources after
     # the first would otherwise see a populated database and report the gaps
     # they fill as news, so the whole run stays silent, not just source one.
@@ -83,7 +97,9 @@ def collect(conn, now: dt.datetime, *, offline: bool) -> list[differ.Event]:
                 result = scraper.fetch()
         except Exception:  # noqa: BLE001 - one dead source must not kill the run
             log.exception("%s: scrape failed", name)
+            _note_failure(conn, name, quiet=quiet)
             continue
+        db.set_setting(conn, f"failures:{name}", 0)
         log.info("%s: %d matches", name, len(result.matches))
         conflicts = db.store_matches(
             conn, result.matches, result.source, result.fetched_at
@@ -187,12 +203,15 @@ def main(argv: list[str]) -> None:
 
     conn = db.connect()
     now = dt.datetime.now(dt.UTC)
-    events = collect(conn, now, offline=offline)
+    events = collect(conn, now, offline=offline, quiet=dry_run or offline)
     events += differ.due_reminders(db.stored_matches(conn), now)
     log.info("%d event(s)", len(events))
     notify(conn, events, dry_run=dry_run)
     if not dry_run and not offline:
         bot.poll(conn)
+    # WAL keeps recent writes in a sidecar file that is deliberately not
+    # committed, so the database has to be closed before Actions commits it.
+    conn.close()
 
 
 if __name__ == "__main__":

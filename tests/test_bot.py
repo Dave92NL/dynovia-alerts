@@ -110,6 +110,7 @@ def test_polling_advances_the_offset_even_when_a_command_blows_up(conn, monkeypa
         bot.telegram, "get_updates", lambda offset: [{"update_id": 41, "message": {"text": "/tabela"}}]
     )
     monkeypatch.setattr(bot.telegram, "send", lambda *a, **k: sent.append(a))
+    db.set_setting(conn, bot.OFFSET_KEY, "1")  # not a fresh bot
 
     bot.poll(conn)
     assert db.get_setting(conn, bot.OFFSET_KEY) == "42"
@@ -154,3 +155,26 @@ def test_nobody_assists_their_own_goal(conn):
     goal = db.goals_needing_assist(conn, "2026/27")[0]
     text, _ = bot.handle_command(conn, f"/asysta {goal['id']} {goal['scorer']}")
     assert "nie może asystować sam sobie" in text
+
+
+def test_a_fresh_bot_skips_the_backlog(conn, monkeypatch):
+    # Telegram keeps a day of updates. A rebuilt database must not answer all
+    # of yesterday's commands at once.
+    sent = []
+    monkeypatch.setattr(
+        bot.telegram,
+        "get_updates",
+        lambda offset: [
+            {"update_id": 10, "message": {"text": "/tabela"}},
+            {"update_id": 11, "message": {"text": "/ostatni"}},
+        ],
+    )
+    monkeypatch.setattr(bot.telegram, "send", lambda *a, **k: sent.append(a))
+
+    bot.poll(conn)
+    assert sent == []
+    assert db.get_setting(conn, bot.OFFSET_KEY) == "12"
+
+    # And from then on it answers normally.
+    bot.poll(conn)
+    assert sent

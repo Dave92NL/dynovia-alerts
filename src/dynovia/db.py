@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS conflicts (
     value_b     TEXT,
     detected_at TEXT    NOT NULL,
     resolved    INTEGER NOT NULL DEFAULT 0,
+    chosen      TEXT,   -- the value the owner picked, which then wins outright
     UNIQUE (match_id, field, source_a, value_a, source_b, value_b)
 );
 
@@ -316,6 +317,7 @@ def _remerge(
         )
     }
     merged, conflicts = merge.merge(views)
+    merged = _apply_choices(conn, match_id, merged)
     conn.execute(
         "UPDATE matches SET date = :date, time = :time, competition = :competition,"
         " round = :round, home = :home, away = :away, home_score = :home_score,"
@@ -344,6 +346,67 @@ def record_conflict(
             stamp,
         ),
     )
+
+
+def _apply_choices(conn: sqlite3.Connection, match_id: int, merged: MatchData):
+    """A conflict the owner has settled beats the trust order from then on."""
+    import dataclasses
+
+    for row in conn.execute(
+        "SELECT field, chosen FROM conflicts"
+        " WHERE match_id = ? AND resolved = 1 AND chosen IS NOT NULL",
+        (match_id,),
+    ):
+        field, chosen = row["field"], row["chosen"]
+        if field == "date":
+            merged = dataclasses.replace(merged, date=dt.date.fromisoformat(chosen))
+        elif field == "time":
+            merged = dataclasses.replace(merged, time=dt.time.fromisoformat(chosen))
+        elif field == "score" and "-" in chosen:
+            home, away = chosen.split("-", 1)
+            merged = dataclasses.replace(
+                merged, home_score=int(home), away_score=int(away), status="finished"
+            )
+        elif field == "competition":
+            merged = dataclasses.replace(merged, competition=chosen)
+    return merged
+
+
+def choose_conflict(conn: sqlite3.Connection, conflict_id: int, value: str) -> int | None:
+    """Settle a conflict on the chosen value and rebuild that match."""
+    row = conn.execute(
+        "SELECT match_id FROM conflicts WHERE id = ?", (conflict_id,)
+    ).fetchone()
+    if row is None:
+        return None
+    with conn:
+        conn.execute(
+            "UPDATE conflicts SET resolved = 1, chosen = ? WHERE id = ?",
+            (value, conflict_id),
+        )
+        _remerge(conn, row["match_id"], _now())
+    return row["match_id"]
+
+
+def pin_player(conn: sqlite3.Connection, conflict_id: int, name: str) -> bool:
+    """Answer a "who is this?" question by recording the alias for good."""
+    row = conn.execute(
+        "SELECT source_a, value_a FROM conflicts WHERE id = ?", (conflict_id,)
+    ).fetchone()
+    if row is None:
+        return False
+    with conn:
+        player_id = _player_id(conn, name)
+        conn.execute(
+            "INSERT OR IGNORE INTO player_aliases (player_id, alias, source)"
+            " VALUES (?, ?, ?)",
+            (player_id, normalize_player(row["value_a"]), row["source_a"]),
+        )
+        conn.execute(
+            "UPDATE conflicts SET resolved = 1, chosen = ? WHERE id = ?",
+            (name, conflict_id),
+        )
+    return True
 
 
 def stored_matches(conn: sqlite3.Connection) -> dict[MatchKey, MatchData]:

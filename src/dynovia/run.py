@@ -13,7 +13,7 @@ import datetime as dt
 import logging
 import sys
 
-from dynovia import db, differ, players, protokol
+from dynovia import bot, db, differ, players, protokol
 from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH, SCHEDULE_PATH
 from dynovia.differ import WARSAW, kickoff
 from dynovia.notify import telegram
@@ -168,6 +168,8 @@ def main(argv: list[str]) -> None:
     events += differ.due_reminders(db.stored_matches(conn), now)
     log.info("%d event(s)", len(events))
     notify(conn, events, dry_run=dry_run)
+    if not dry_run and not offline:
+        bot.poll(conn)
 
 
 if __name__ == "__main__":

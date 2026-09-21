@@ -11,6 +11,7 @@ from __future__ import annotations
 import sqlite3
 
 from dynovia.merge import GOAL_TRUST
+from dynovia.models import normalize_player
 
 
 def goals_by_player(conn: sqlite3.Connection, season: str) -> list[tuple[str, int]]:
@@ -48,3 +49,42 @@ def appearances_by_player(conn: sqlite3.Connection, season: str) -> list[tuple[s
         (season,),
     ).fetchall()
     return [(row["name"], row["played"]) for row in rows]
+
+
+def player_summary(conn: sqlite3.Connection, season: str, player: str) -> dict:
+    """Everything the bot shows for one player. Minutes only exist for matches
+    with an imported PZPN protocol, so they are reported separately from
+    appearances rather than implied by them."""
+    row = conn.execute(
+        "SELECT p.id, p.name FROM players p WHERE p.normalized_name = ?",
+        (normalize_player(player),),
+    ).fetchone()
+    if row is None:
+        return {}
+
+    played = conn.execute(
+        "SELECT COUNT(DISTINCT a.match_id) AS n FROM appearances a"
+        " JOIN matches m ON m.id = a.match_id"
+        " WHERE a.player_id = ? AND m.season = ?",
+        (row["id"], season),
+    ).fetchone()["n"]
+    minutes = conn.execute(
+        "SELECT SUM(COALESCE(a.minute_out, 90) - COALESCE(a.minute_in, 0)) AS n"
+        " FROM appearances a JOIN matches m ON m.id = a.match_id"
+        " WHERE a.player_id = ? AND m.season = ? AND a.source = 'laczynaspilka'",
+        (row["id"], season),
+    ).fetchone()["n"]
+    cards = conn.execute(
+        "SELECT c.color, COUNT(*) AS n FROM cards c JOIN matches m ON m.id = c.match_id"
+        " WHERE c.player_id = ? AND m.season = ? GROUP BY c.color",
+        (row["id"], season),
+    ).fetchall()
+
+    goals = dict(goals_by_player(conn, season)).get(row["name"], 0)
+    return {
+        "name": row["name"],
+        "played": played,
+        "minutes": minutes or 0,
+        "goals": goals,
+        "cards": {card["color"]: card["n"] for card in cards},
+    }

@@ -178,3 +178,18 @@ def test_a_fresh_bot_skips_the_backlog(conn, monkeypatch):
     # And from then on it answers normally.
     bot.poll(conn)
     assert sent
+
+
+def test_a_failed_push_is_reported_as_text_not_as_an_object(conn, monkeypatch):
+    # /push once answered "Wysłałem push" while the server had refused it, and
+    # then crashed on the reply. The command exists to catch silent failures,
+    # so it must not be one itself.
+    from dynovia.notify import webpush
+
+    monkeypatch.setattr(webpush, "configured", lambda: True)
+    monkeypatch.setattr(
+        webpush, "send", lambda text: webpush.Problem("HTTP 403", expired=False)
+    )
+    text, _ = bot.handle_command(conn, "/push")
+    assert isinstance(text, str)
+    assert "403" in text

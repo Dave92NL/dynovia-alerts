@@ -15,15 +15,13 @@ import json
 import logging
 from dataclasses import dataclass
 
-from dynovia.config import PUSH_SUBSCRIPTION, VAPID_PRIVATE_KEY
+from dynovia.config import PUSH_SUBSCRIPTION, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 
 log = logging.getLogger(__name__)
 
-# Required by the spec so the push service can reach whoever runs this. Apple
-# rejects an unroutable address with a flat 403, so it points at the repository
-# rather than at a made-up mailbox - and the owner's own address stays out of
-# a third party's logs.
-CLAIMS = {"sub": "https://github.com/Dave92NL/dynovia-alerts"}
+# The spec lets this be a mailto: or an https: URL, but py_vapid accepts only
+# mailto:, and Apple returns a flat 403 for an unroutable domain. So it has to
+# be a real address, and it comes from Secrets - this repository is public.
 
 EXPIRED = (404, 410)
 """The push service says this subscription is dead. iOS does this on its own
@@ -39,7 +37,7 @@ class Problem:
 
 
 def configured() -> bool:
-    return bool(PUSH_SUBSCRIPTION and VAPID_PRIVATE_KEY)
+    return bool(PUSH_SUBSCRIPTION and VAPID_PRIVATE_KEY and VAPID_SUBJECT)
 
 
 def send(text: str) -> Problem | None:
@@ -47,7 +45,16 @@ def send(text: str) -> Problem | None:
     raises: a broken push must not stop a Telegram notification that already
     went out."""
     if not configured():
-        return Problem("Push nieskonfigurowany.", expired=False)
+        missing = [
+            name
+            for name, value in (
+                ("PUSH_SUBSCRIPTION", PUSH_SUBSCRIPTION),
+                ("VAPID_PRIVATE_KEY", VAPID_PRIVATE_KEY),
+                ("VAPID_SUBJECT", VAPID_SUBJECT),
+            )
+            if not value
+        ]
+        return Problem("Brak w sekretach: " + ", ".join(missing), expired=False)
 
     try:
         from pywebpush import WebPushException, webpush
@@ -57,7 +64,7 @@ def send(text: str) -> Problem | None:
             subscription_info=json.loads(PUSH_SUBSCRIPTION),
             data=json.dumps({"title": title.strip(), "body": body.strip()}),
             vapid_private_key=VAPID_PRIVATE_KEY,
-            vapid_claims=dict(CLAIMS),
+            vapid_claims={"sub": VAPID_SUBJECT},
         )
         return None
     except WebPushException as exc:

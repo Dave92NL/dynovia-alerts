@@ -40,6 +40,10 @@ VAPID_PUBLIC_KEY = os.environ.get(
     "BOVrHTXM8u4BdeL_44COcu-fHPkrg0o5_E4Ynd4fXxrMJJLOrC8zzOPFm8ssJydQrwIvn4aBJfGIswtuUceyWGs",
 )
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+# The contact the push service is given for whoever runs this, as a mailto:
+# link - py_vapid rejects anything else. It lives in Secrets rather than in
+# the code because this repository is public.
+VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "")
 PUSH_SUBSCRIPTION = os.environ.get("PUSH_SUBSCRIPTION", "")
 
 DATA_DIR = ROOT / "data"

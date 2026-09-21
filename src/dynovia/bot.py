@@ -309,7 +309,7 @@ def cmd_push(conn, args: str) -> tuple[str, list | None]:
         )
     problem = webpush.send("Dynovia Alerts\nTest - jeśli to widzisz, push działa.")
     if problem:
-        return problem, None
+        return problem.message, None
     return "Wysłałem push. Sprawdź ekran blokady telefonu.", None
 
 

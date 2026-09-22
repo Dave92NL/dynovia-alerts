@@ -23,6 +23,10 @@ REMINDERS = (
     (dt.timedelta(hours=1), "reminder_1h"),
 )
 
+CARDS = {"yellow": "🟨", "second_yellow": "🟨🟥", "red": "🟥"}
+"""A second yellow is a sending off, but it is not the same event as a straight
+red and the protocol tells them apart, so the message does too."""
+
 FULL_TIME = 90
 """Minutes. A protocol records the whistle as minute 90 for everyone still on
 the pitch, so it is what tells a substitution apart from simply finishing."""
@@ -131,7 +135,11 @@ def fresh_matches(
 
 
 def match_details(
-    key: MatchKey, match: MatchData, scorers: list[dict], squad: list[dict]
+    key: MatchKey,
+    match: MatchData,
+    scorers: list[dict],
+    squad: list[dict],
+    cards: list[dict],
 ) -> list[Event]:
     """Goals and the protocol, offered again on every tick.
 
@@ -154,12 +162,17 @@ def match_details(
                 f"\n{match.home} – {match.away}",
             )
         )
-    if squad:
-        events.append(Event(key, "protocol_ready", _protocol_text(match, squad)))
+    # Cards only ever arrive with the protocol that carries them, so they are
+    # a line in that message rather than a buzz of their own. `or cards` so a
+    # card can never be the thing that goes silently missing.
+    if squad or cards:
+        events.append(
+            Event(key, "protocol_ready", _protocol_text(match, squad, cards))
+        )
     return events
 
 
-def _protocol_text(match: MatchData, squad: list[dict]) -> str:
+def _protocol_text(match: MatchData, squad: list[dict], cards: list[dict]) -> str:
     lines = [f"📋 Protokół: {match.home} – {match.away}"]
     started = [p["name"] for p in squad if p["started"]]
     if started:
@@ -176,6 +189,13 @@ def _protocol_text(match: MatchData, squad: list[dict]) -> str:
     ]
     if changes:
         lines.append("Zmiany: " + " · ".join(changes))
+    if cards:
+        lines.append(
+            "Kartki: "
+            + " · ".join(
+                f"{CARDS[c['color']]} {c['name']}{_minute(c['minute'])}" for c in cards
+            )
+        )
     return "\n".join(lines)
 
 

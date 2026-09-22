@@ -149,9 +149,13 @@ def played(name: str, started=True, minute_in=None, minute_out=None) -> dict:
     }
 
 
-def details(scorers=(), squad=(), **overrides):
+def card(name: str, color: str = "yellow", minute: int | None = None) -> dict:
+    return {"name": name, "color": color, "minute": minute}
+
+
+def details(scorers=(), squad=(), cards=(), **overrides):
     m = match(**overrides)
-    return differ.match_details(m.key, m, list(scorers), list(squad))
+    return differ.match_details(m.key, m, list(scorers), list(squad), list(cards))
 
 
 def test_only_matches_that_kicked_off_recently_are_looked_at():
@@ -204,6 +208,29 @@ def test_playing_to_the_whistle_is_not_a_substitution():
     # naive read turns a full squad into eleven substitutions.
     events = details(squad=[played(f"Gracz {i}", minute_out=90) for i in range(11)])
     assert "Zmiany" not in events[0].text
+
+
+def test_cards_ride_along_in_the_protocol_message():
+    # They only ever arrive with the protocol, so a separate buzz would just
+    # mean two notifications for one import.
+    events = details(
+        squad=[played("Krystian Skubisz")],
+        cards=[card("Krystian Skubisz", minute=60), card("Jakob Dzik", "red", 80)],
+    )
+    assert kinds(events) == ["protocol_ready"]
+    assert "Kartki: 🟨 Krystian Skubisz 60' · 🟥 Jakob Dzik 80'" in events[0].text
+
+
+def test_a_card_is_never_the_thing_that_goes_missing():
+    # No squad stored yet for whatever reason: the cards still have to speak.
+    events = details(cards=[card("Krystian Skubisz", minute=60)])
+    assert kinds(events) == ["protocol_ready"]
+    assert "Skład" not in events[0].text
+
+
+def test_a_second_yellow_is_not_a_straight_red():
+    events = details(cards=[card("Jakob Dzik", "second_yellow", 80)])
+    assert "🟨🟥 Jakob Dzik 80'" in events[0].text
 
 
 def test_no_protocol_means_no_protocol_message():

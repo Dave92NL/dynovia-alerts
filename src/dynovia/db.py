@@ -776,6 +776,22 @@ def match_appearances(conn: sqlite3.Connection, match_id: int) -> list[sqlite3.R
     ).fetchall()
 
 
+def match_cards(conn: sqlite3.Connection, match_id: int) -> list[sqlite3.Row]:
+    """Cards shown in one match, earliest first.
+
+    DISTINCT rather than a trust order like the scorers get: today the PZPN
+    protocol is the only source that records cards at all, so there is nothing
+    to rank - but if a scraper ever learns to, the same card seen twice must
+    still be listed once.
+    """
+    return conn.execute(
+        "SELECT DISTINCT p.name, c.color, c.minute FROM cards c"
+        " JOIN players p ON p.id = c.player_id"
+        " WHERE c.match_id = ? ORDER BY COALESCE(c.minute, 999), p.name",
+        (match_id,),
+    ).fetchall()
+
+
 def report_for(conn: sqlite3.Connection, match_id: int) -> str:
     row = conn.execute(
         "SELECT text FROM articles WHERE match_id = ? ORDER BY LENGTH(text) DESC LIMIT 1",

@@ -166,6 +166,7 @@ def _detail_events(conn, now: dt.datetime) -> list[differ.Event]:
             scorers.get(match_id, []),
             [dict(row) for row in db.match_appearances(conn, match_id)],
             [dict(row) for row in db.match_cards(conn, match_id)],
+            now,
         )
     return events
 

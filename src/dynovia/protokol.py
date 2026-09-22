@@ -1,10 +1,26 @@
 """Importing PZPN match protocols that were saved by hand.
 
-laczynaspilka.pl is an Angular app whose data sits behind a Keycloak-gated API;
-the server serves an empty shell and the public client cannot obtain a token, so
-there is nothing to scrape. What there is: a page the owner can save with
-Ctrl+S, which contains the richest record of a match anywhere - both lineups
-with shirt numbers, every substitution with its minute, and the cards.
+laczynaspilka.pl is an Angular app: the server sends an empty 25 kB shell and
+the match data follows from competition-api-pro2. That API answers 401 until it
+is shown a token, and the token comes from an invisible reCAPTCHA the page
+clears first. Measured off a real page load, in this order:
+
+    GET /api/bus/competition/v1/Authorize/recaptcha
+    GET /api/bus/competition/v1/matches/{id}
+    GET /api/bus/competition/v1/matches/{id}/events
+
+(The Keycloak realm the bundle also carries is for signing users in, and is not
+what gates this.)
+
+So this is not a scraping problem waiting to be solved harder. The bot check is
+deliberate, and automating around it - replaying the token flow or driving a
+headless browser to farm tokens - is the thing it exists to stop. A human
+pressing Ctrl+S is not: the check does its job and lets a person through.
+
+What that leaves is the richest record of a match anywhere - lineups with shirt
+numbers, every substitution with its minute, and the cards. When a played match
+has no protocol a day later, differ.py asks for it rather than letting the
+owner remember the chore unaided.
 
 Drop such a file into protokoly/ and the next run reads it. Importing is
 idempotent, so the file can stay there; nothing is deleted behind the owner's

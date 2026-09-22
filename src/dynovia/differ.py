@@ -31,6 +31,11 @@ FULL_TIME = 90
 """Minutes. A protocol records the whistle as minute 90 for everyone still on
 the pitch, so it is what tells a substitution apart from simply finishing."""
 
+PROTOCOL_NAG = dt.timedelta(hours=24)
+"""How long to wait after kickoff before asking for a protocol that has not
+arrived. The delegate fills it in over the following hours, so a nag at the
+final whistle is noise - and a day still leaves two inside AFTERMATH to act."""
+
 AFTERMATH = dt.timedelta(hours=72)
 """How long after kickoff goals and protocols are still news. It is also what
 keeps a rebuilt database from replaying a whole season into the phone: nothing
@@ -140,6 +145,7 @@ def match_details(
     scorers: list[dict],
     squad: list[dict],
     cards: list[dict],
+    now: dt.datetime,
 ) -> list[Event]:
     """Goals and the protocol, offered again on every tick.
 
@@ -169,7 +175,27 @@ def match_details(
         events.append(
             Event(key, "protocol_ready", _protocol_text(match, squad, cards))
         )
+    elif _nag_due(match, now):
+        # The protocol cannot be fetched - see protokol.py - so the only thing
+        # left is to stop the owner having to remember the chore themselves.
+        events.append(
+            Event(
+                key,
+                "protocol_missing",
+                f"⏳ Brakuje protokołu: {match.home} – {match.away}\n"
+                "Składy, minuty i kartki czekają na Ctrl+S ze strony meczu.",
+            )
+        )
     return events
+
+
+def _nag_due(match: MatchData, now: dt.datetime) -> bool:
+    start = kickoff(match)
+    return (
+        match.status == "finished"
+        and start is not None
+        and now >= start + PROTOCOL_NAG
+    )
 
 
 def _protocol_text(match: MatchData, squad: list[dict], cards: list[dict]) -> str:

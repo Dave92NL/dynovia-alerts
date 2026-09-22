@@ -165,9 +165,11 @@ def card(name: str, color: str = "yellow", minute: int | None = None) -> dict:
     return {"name": name, "color": color, "minute": minute}
 
 
-def details(scorers=(), squad=(), cards=(), **overrides):
+def details(scorers=(), squad=(), cards=(), now=None, **overrides):
     m = match(**overrides)
-    return differ.match_details(m.key, m, list(scorers), list(squad), list(cards))
+    return differ.match_details(
+        m.key, m, list(scorers), list(squad), list(cards), now or KICKOFF
+    )
 
 
 def test_only_matches_that_kicked_off_recently_are_looked_at():
@@ -248,3 +250,29 @@ def test_a_second_yellow_is_not_a_straight_red():
 def test_no_protocol_means_no_protocol_message():
     assert details(scorers=[goal("Filip Goleś", 40)]) != []
     assert kinds(details(scorers=[goal("Filip Goleś", 40)])) == ["goal"]
+
+
+A_DAY_LATER = KICKOFF + differ.PROTOCOL_NAG
+
+
+def test_a_played_match_with_no_protocol_asks_for_one():
+    events = details(status="finished", now=A_DAY_LATER)
+    assert kinds(events) == ["protocol_missing"]
+    assert "Ctrl+S" in events[0].text
+
+
+def test_the_nag_waits_a_day_before_asking():
+    # The delegate fills the protocol in over the following hours; asking at
+    # the final whistle would be noise.
+    assert details(status="finished", now=KICKOFF + dt.timedelta(hours=3)) == []
+
+
+def test_a_match_still_being_played_is_never_nagged():
+    assert details(now=A_DAY_LATER) == []
+
+
+def test_an_imported_protocol_silences_the_nag():
+    events = details(
+        squad=[played("Krystian Skubisz")], status="finished", now=A_DAY_LATER
+    )
+    assert kinds(events) == ["protocol_ready"]

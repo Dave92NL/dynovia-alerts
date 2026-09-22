@@ -206,26 +206,72 @@ function renderSources() {
     <div class="card" id="pushCard"></div>
     ${protocolHelp()}`;
   renderPush();
+  // Three hundred characters retyped on a phone is not an instruction, it is
+  // a punishment. Clipboard needs the click to be the user's, so it is wired
+  // here rather than fired from anywhere else.
+  $("copyJs").addEventListener("click", async (event) => {
+    try {
+      await navigator.clipboard.writeText(SHORTCUT_JS);
+      event.target.textContent = "Skopiowane ✓";
+    } catch {
+      event.target.textContent = "Nie mogę — zaznacz i skopiuj ręcznie";
+    }
+  });
 }
 
 /* Protokołu PZPN nie da się pobrać - patrz protokol.py. Z telefonu zostaje
    Skrót, bo Safari zapisuje pustą skorupę Angulara zamiast wyrenderowanej
-   strony, a akcja "Uruchom JavaScript na stronie" oddaje to, co widać. */
+   strony, a akcja "Uruchom JavaScript na stronie" oddaje to, co widać.
+
+   Każdy krok poniżej wyłożył kogoś przy pierwszym przejściu, więc żaden nie
+   jest tu dla ozdoby. Najgorszy jest ten z wejściem akcji: puste wejście nie
+   daje błędu, tylko ciszę, i nie da się zgadnąć dlaczego. */
+const SHORTCUT_JS =
+  "new Response(new Blob([document.documentElement.outerHTML]).stream()" +
+  ".pipeThrough(new CompressionStream('gzip'))).arrayBuffer().then(b=>{" +
+  "const u=new Uint8Array(b);let s='';" +
+  "for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null," +
+  "u.subarray(i,i+8192));completion(btoa(s))})";
+
 function protocolHelp() {
-  return `<div class="card help">
-    <span class="tag">Protokół PZPN z telefonu</span>
+  return `<div class="card help"><details>
+    <summary>Jak wysłać protokół PZPN z telefonu</summary>
+
     <p><b>Tylko Safari.</b> Chrome i Firefox na iOS przekazują do arkusza
     Udostępnij sam adres, nie stronę, więc Skrót nie ma czego odczytać.</p>
-    <p>Skrót budujesz raz, trzy akcje:</p>
+
+    <p class="step">Raz — pozwól Skrótom uruchamiać skrypty</p>
+    <p>Ustawienia telefonu → <b>Skróty</b> → Zaawansowane → włącz
+    <b>Zezwalaj na uruchamianie skryptów</b>. Bez tego akcja z punktu 1 jest
+    zablokowana.</p>
+
+    <p class="step">Raz — zbuduj Skrót</p>
+    <p>Aplikacja Skróty → <b>+</b> → kolejne akcje dodajesz przez pole
+    <b>Szukaj</b> na dole:</p>
     <ol>
-      <li>Uruchom JavaScript na stronie:
-        <code>return document.documentElement.outerHTML</code></li>
-      <li>Ustaw nazwę: <code>protokol.html</code></li>
-      <li>Udostępnij → Telegram → czat z botem</li>
+      <li><b>Uruchom JavaScript na stronie internetowej</b>. Skasuj przykładowy
+        kod i wklej:
+        <button class="copy" id="copyJs">Kopiuj skrypt</button>
+        <code>${esc(SHORTCUT_JS)}</code>
+        <br><b class="warn">Potem tapnij szare pole „Strona WWW" w tej akcji
+        i wybierz „Dane wejściowe skrótu" — napis musi zrobić się
+        niebieski.</b> Puste wejście to cisza bez błędu.</li>
+      <li><b>Ustaw nazwę</b> → <code>protokol.b64</code></li>
+      <li><b>Udostępnij</b> — nic w niej nie ustawiasz</li>
     </ol>
-    <p>Potem: strona meczu na laczynaspilka.pl w Safari → Udostępnij → Skrót →
-    wyślij. Bot odpisze, co zaimportował, albo dlaczego nie.</p>
-  </div>`;
+    <p>Na koniec ikona <b>ⓘ</b> na dolnym pasku → włącz <b>Pokaż w arkuszu
+    udostępniania</b>, a typy wejścia zawęź do stron internetowych. Bez tego
+    Skrót nigdy nie pojawi się w Safari. Nazwij go, np. „Protokół Dynovia".</p>
+
+    <p class="step">Za każdym razem</p>
+    <p>Strona meczu na laczynaspilka.pl w Safari → <b>Udostępnij</b> → przewiń
+    do nazwy Skrótu → Telegram → czat z botem → wyślij. Bot odpisze, co
+    zaimportował, albo dlaczego nie.</p>
+
+    <p class="aside">Skrypt pakuje stronę, bo iOS nie przepuszcza 650 kB
+    między Safari a Skrótami — kończy się to błędem „XPC error". Po spakowaniu
+    zostaje z tego 53 kB. Bot rozpakowuje i czyta dokładnie tę samą stronę.</p>
+  </details></div>`;
 }
 
 /* --- powiadomienia push -------------------------------------------------- */

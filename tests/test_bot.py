@@ -1,6 +1,8 @@
 """Bot commands and the buttons that settle a question for good."""
 
+import base64
 import datetime as dt
+import gzip
 import pathlib
 
 import pytest
@@ -284,3 +286,47 @@ def test_a_stranger_gets_nothing_done_and_no_answer(conn, delivered):
 def test_a_stranger_cannot_run_commands_either(conn, delivered):
     bot._dispatch(conn, {"message": {"chat": {"id": 1}, "text": "/tabela"}})
     assert delivered == []
+
+
+def packed(page: bytes) -> bytes:
+    """What the Shortcut sends: the page gzipped, then base64."""
+    return base64.b64encode(gzip.compress(page))
+
+
+def test_a_gzipped_page_imports_exactly_like_a_plain_one(conn, monkeypatch):
+    # iOS cannot carry 657 kB out of the JavaScript action, so the Shortcut
+    # compresses. The parser must not be able to tell the difference.
+    monkeypatch.setattr(bot.players, "load_roster", lambda path: REGISTRY)
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(
+        bot.telegram, "get_file", lambda file_id: packed(PROTOCOL.read_bytes())
+    )
+    said = []
+    bot._dispatch(conn, {"message": message(document=document("protokol.b64"))})
+
+    assert said[0].startswith("✅ Protokół")
+    assert "Grom Handzlówka" in said[0]
+    assert db.match_appearances(conn, db.match_ids(conn)[GROM])
+
+
+def test_a_b64_that_is_not_one_says_so_instead_of_crashing(conn, monkeypatch):
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(bot.telegram, "get_file", lambda file_id: b"to nie jest base64!!")
+    bot._dispatch(conn, {"message": message(document=document("protokol.b64"))})
+
+    assert said[0].startswith("❌")
+    assert "Skrótu" in said[0]
+
+
+def test_a_file_that_expands_beyond_reason_is_refused(conn, monkeypatch):
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(
+        bot.telegram,
+        "get_file",
+        lambda file_id: packed(b"x" * (bot.MAX_UNPACKED + 1)),
+    )
+    bot._dispatch(conn, {"message": message(document=document("protokol.b64"))})
+
+    assert said[0].startswith("❌")

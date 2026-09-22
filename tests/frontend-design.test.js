@@ -16,10 +16,19 @@ test("mobile design has clear hierarchy for match, statistics, and table", () =>
 });
 
 test("the sources tab explains how to send a protocol from a phone", () => {
-  // Safari is a requirement, not advice: the Shortcuts JS action gets nothing
-  // from Chrome or Firefox on iOS. If that sentence goes, so does the only
-  // thing standing between the owner and a silently empty file.
+  // Every one of these sank a real attempt at following the instructions, so
+  // each is asserted rather than trusted to survive the next edit.
+  //
+  // Safari is a requirement, not advice - the Shortcuts JS action gets nothing
+  // from Chrome or Firefox on iOS.
   assert.match(app, /Tylko Safari/);
-  assert.match(app, /outerHTML/);
+  // `return` is rejected outright: the action waits for completion().
+  assert.match(app, /completion\(/);
+  // An unwired input produces silence with no error, which is unguessable.
+  assert.match(app, /Dane wejściowe skrótu/);
+  // Without this the Shortcut never appears in Safari at all.
+  assert.match(app, /arkuszu\s+udostępniania/);
+  // 650 kB will not cross XPC; the page has to travel compressed.
+  assert.match(app, /CompressionStream/);
   assert.match(html, /\.help code/);
 });

@@ -142,10 +142,26 @@
   button.push[disabled] { background: var(--line); color: var(--muted); }
   .help p { margin: 8px 0; }
   .help ol { margin: 8px 0; padding-left: 20px; }
-  .help li { margin-bottom: 5px; }
+  .help li { margin-bottom: 10px; }
   .help code {
-    font-size: 11px; background: var(--bg); padding: 2px 5px;
-    border-radius: 5px; word-break: break-all;
+    display: block; font-size: 11px; background: var(--bg); padding: 8px;
+    border-radius: 7px; word-break: break-all; margin: 6px 0; line-height: 1.35;
+  }
+  .help summary {
+    font-weight: 700; cursor: pointer; padding: 2px 0;
+  }
+  .help details[open] summary { margin-bottom: 6px; }
+  .help .step {
+    font-size: 10px; letter-spacing: .7px; text-transform: uppercase;
+    color: var(--muted); font-weight: 750; margin: 16px 0 4px;
+  }
+  /* The one step whose omission produces silence instead of an error. */
+  .help .warn { color: #9a3412; }
+  .help .aside { color: var(--muted); font-size: 12px; }
+  button.copy {
+    border: 0; border-radius: 8px; background: var(--blue); color: #fff;
+    font: inherit; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    margin-top: 6px; cursor: pointer;
   }
   pre.sub {
     white-space: pre-wrap; word-break: break-all; font-size: 11px;

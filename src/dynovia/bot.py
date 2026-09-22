@@ -11,7 +11,10 @@ the same question is never asked twice.
 
 from __future__ import annotations
 
+import base64
 import datetime as dt
+import gzip
+import io
 import logging
 import re
 
@@ -414,6 +417,11 @@ MAX_UPLOAD = 5 * 1024 * 1024
 """A saved protocol page is under a megabyte. Anything much larger is not one,
 and there is no reason to pull it down to find that out."""
 
+MAX_UNPACKED = 20 * 1024 * 1024
+"""Ceiling on what a .b64 may expand to. Only the owner can send anything here,
+so this is not a defence against an attacker - it is a defence against a file
+that turns out not to be what it looked like."""
+
 
 def _from_owner(update: dict) -> bool:
     """This bot serves exactly one person.
@@ -454,6 +462,23 @@ def _dispatch(conn, update: dict) -> None:
     telegram.send(reply, buttons=buttons, as_html=reply.startswith("<pre>"))
 
 
+def _unpack(raw: bytes) -> bytes:
+    """base64 of a gzipped page, back into the page.
+
+    Read with a ceiling rather than all at once, so a file that expands beyond
+    all reason is refused instead of unpacked first and judged afterwards.
+    """
+    try:
+        packed = base64.b64decode(b"".join(raw.split()), validate=True)
+        with gzip.GzipFile(fileobj=io.BytesIO(packed)) as unzipped:
+            page = unzipped.read(MAX_UNPACKED + 1)
+    except Exception as problem:  # noqa: BLE001 - every failure reads the same
+        raise ValueError("nie udało się rozpakować, to nie jest plik ze Skrótu") from problem
+    if len(page) > MAX_UNPACKED:
+        raise ValueError("po rozpakowaniu jest absurdalnie duży")
+    return page
+
+
 def _receive_protocol(conn, document: dict) -> str:
     """A protocol page sent from the phone, via the Shortcut - see web/app.js.
 
@@ -462,12 +487,21 @@ def _receive_protocol(conn, document: dict) -> str:
     has to name the likely cause rather than just failing.
     """
     name = document.get("file_name") or "plik"
-    if not name.lower().endswith((".html", ".htm")):
-        return f"❌ {name}: przyjmuję tylko .html ze Skrótu."
+    if not name.lower().endswith((".html", ".htm", ".b64")):
+        return f"❌ {name}: przyjmuję tylko .b64 ze Skrótu albo .html z Ctrl+S."
     if (document.get("file_size") or 0) > MAX_UPLOAD:
         return f"❌ {name}: za duży, protokół waży poniżej megabajta."
 
     raw = telegram.get_file(document["file_id"])
+    if name.lower().endswith(".b64"):
+        # iOS refuses to carry 657 kB out of the JavaScript action - see the
+        # instructions in web/app.js - so the Shortcut gzips the page first.
+        # What the parser gets is still byte for byte the page itself.
+        try:
+            raw = _unpack(raw)
+        except ValueError as problem:
+            return f"❌ {name}: {problem}"
+
     result = protokol.import_html(
         conn, name, raw.decode("utf-8", errors="replace"), players.load_roster(ROSTER_PATH)
     )

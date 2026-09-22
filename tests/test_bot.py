@@ -352,3 +352,77 @@ def test_something_that_is_not_a_webarchive_is_named_as_such(conn, monkeypatch):
     bot._dispatch(conn, {"message": message(document=document("strona.webarchive"))})
 
     assert ".webarchive" in said[0]
+
+
+# --- czekanie miedzy tikami -----------------------------------------------
+
+
+@pytest.fixture
+def waiting(monkeypatch, tmp_path):
+    """dynovia.wait with its own database on disk.
+
+    On disk rather than in memory because wait_for_message opens and closes
+    its own connection, and the offset has to survive that.
+    """
+    from dynovia import wait
+
+    real_connect = db.connect
+    path = tmp_path / "wait.db"
+    monkeypatch.setattr(wait.db, "connect", lambda: real_connect(path))
+    return wait, real_connect(path)
+
+
+def test_waiting_returns_the_moment_something_is_sent(waiting):
+    wait, conn = waiting
+    db.set_setting(conn, bot.OFFSET_KEY, "77")
+
+    asked = []
+    wait.telegram.get_updates = lambda offset, wait=0: (
+        asked.append((offset, wait)) or [{"update_id": 78}]
+    )
+    assert wait.wait_for_message(600) is True
+    # One long poll, opened where the bot left off, and out - not a second one
+    # burning the rest of the ten minutes.
+    assert asked == [(77, wait.SLICE)]
+
+    # Nothing consumed: the offset is untouched, so the tick this wakes up
+    # still finds the message waiting for it.
+    assert db.get_setting(conn, bot.OFFSET_KEY) == "77"
+
+
+def test_waiting_gives_up_when_the_time_runs_out(waiting, monkeypatch):
+    wait, _ = waiting
+    monkeypatch.setattr(wait, "SLICE", 0)
+    monkeypatch.setattr(wait.telegram, "get_updates", lambda offset, wait=0: [])
+    assert wait.wait_for_message(0.05) is False
+
+
+def test_a_broken_long_poll_does_not_end_the_wait_early(waiting, monkeypatch):
+    # Telegram blips. The loop keeps its own deadline rather than turning one
+    # failed request into an immediate extra tick.
+    wait, _ = waiting
+    monkeypatch.setattr(wait, "SLICE", 0)
+
+    def broken(offset, wait=0):
+        raise RuntimeError("502")
+
+    monkeypatch.setattr(wait.telegram, "get_updates", broken)
+    assert wait.wait_for_message(0.05) is False
+
+
+def test_a_file_from_the_phone_reaches_the_app_in_the_same_tick(conn, monkeypatch):
+    """A protocol arrives through bot.poll. If the export has already run by
+    then, the app serves JSON without it until the next tick - ten more
+    minutes for data that is already in the database."""
+    from dynovia import run
+
+    order = []
+    real_connect = db.connect
+    monkeypatch.setattr(run, "collect", lambda *a, **k: [])
+    monkeypatch.setattr(run.differ, "due_reminders", lambda *a, **k: [])
+    monkeypatch.setattr(run.db, "connect", lambda: real_connect(":memory:"))
+    monkeypatch.setattr(run.bot, "poll", lambda c: order.append("poll"))
+    monkeypatch.setattr(run.export, "write", lambda c: order.append("export"))
+
+    run.main([])
+    assert order == ["poll", "export"]

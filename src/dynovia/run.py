@@ -258,9 +258,13 @@ def main(argv: list[str]) -> None:
     events += differ.due_reminders(db.stored_matches(conn), now)
     log.info("%d event(s)", len(events))
     notify(conn, events, dry_run=dry_run)
-    export.write(conn)
+    # Before the export, not after: a protocol sent from the phone arrives
+    # through here, and exporting first would leave it out of the JSON the app
+    # reads until the next tick - another ten minutes for data that is already
+    # in the database.
     if not dry_run and not offline:
         bot.poll(conn)
+    export.write(conn)
     # WAL keeps recent writes in a sidecar file that is deliberately not
     # committed, so the database has to be closed before Actions commits it.
     conn.close()

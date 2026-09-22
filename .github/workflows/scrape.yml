@@ -57,6 +57,11 @@ jobs:
           tick=0
           while [ "$(date +%s)" -lt "$deadline" ]; do
             tick=$(( tick + 1 ))
+            # Pick up anything pushed since this job started. Without it a fix
+            # waits for the loop to end, which is up to five hours, and the
+            # only reason it ever arrived sooner was the pull below happening
+            # to run whenever the data moved.
+            git pull --rebase --autostash --quiet || echo "pull nieudany, lece dalej"
             python -m dynovia.run
             git add -A data web/data
             if git diff --cached --quiet; then
@@ -67,7 +72,10 @@ jobs:
               git pull --rebase --autostash
               git push
             fi
-            sleep 600
+            # Listening, not sleeping: this returns the second a protocol
+            # or a command is sent, so the phone does not wait out a tick it
+            # has no reason to wait for.
+            python -m dynovia.wait 600
           done
           echo "$tick tikow w tym przebiegu"
 

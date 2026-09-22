@@ -22,14 +22,16 @@ log = logging.getLogger(__name__)
 API = "https://api.telegram.org/bot{token}/{method}"
 
 
-def _call(method: str, payload: dict) -> dict:
+def _call(method: str, payload: dict, timeout: float = 30.0) -> dict:
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         raise RuntimeError(
             "TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing - set them in .env "
             "locally or in GitHub Secrets"
         )
     response = httpx.post(
-        API.format(token=TELEGRAM_BOT_TOKEN, method=method), json=payload, timeout=30.0
+        API.format(token=TELEGRAM_BOT_TOKEN, method=method),
+        json=payload,
+        timeout=timeout,
     )
     response.raise_for_status()
     return response.json()
@@ -60,10 +62,20 @@ def send(
     log.info("sent: %s", text.splitlines()[0][:70])
 
 
-def get_updates(offset: int) -> list[dict]:
-    """Commands sent since the last run. timeout=0 because this is a cron tick,
-    not a daemon: whatever is waiting is answered now."""
-    result = _call("getUpdates", {"offset": offset, "timeout": 0, "limit": 20})
+def get_updates(offset: int, wait: int = 0) -> list[dict]:
+    """Commands and files sent since the last run.
+
+    wait=0 answers whatever is already queued and returns, which is what a tick
+    wants. A positive wait holds the connection open until something arrives -
+    that is how the job notices a protocol the moment it is sent instead of on
+    its next ten-minute tick. The HTTP timeout has to outlast the one we ask
+    Telegram for, or httpx gives up first and it is no longer long polling.
+    """
+    result = _call(
+        "getUpdates",
+        {"offset": offset, "timeout": wait, "limit": 20},
+        timeout=wait + 30.0,
+    )
     return result.get("result", [])
 
 

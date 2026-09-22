@@ -16,19 +16,11 @@ test("mobile design has clear hierarchy for match, statistics, and table", () =>
 });
 
 test("the sources tab explains how to send a protocol from a phone", () => {
-  // Every one of these sank a real attempt at following the instructions, so
-  // each is asserted rather than trusted to survive the next edit.
-  //
-  // Safari is a requirement, not advice - the Shortcuts JS action gets nothing
-  // from Chrome or Firefox on iOS.
+  // Safari only: no other iOS browser offers this share option at all.
   assert.match(app, /Tylko Safari/);
-  // `return` is rejected outright: the action waits for completion().
-  assert.match(app, /completion\(/);
-  // An unwired input produces silence with no error, which is unguessable.
-  assert.match(app, /Dane wejściowe skrótu/);
-  // Without this the Shortcut never appears in Safari at all.
-  assert.match(app, /arkuszu\s+udostępniania/);
-  // 650 kB will not cross XPC; the page has to travel compressed.
-  assert.match(app, /CompressionStream/);
-  assert.match(html, /\.help code/);
+  // The three taps that actually work. An iOS Shortcut extracting outerHTML
+  // stood here first and never got past 657 kB of page; if these strings go,
+  // the instructions have drifted back to something unfollowable.
+  assert.match(app, /Kompletna witryna/);
+  assert.match(app, /Opcje/);
 });

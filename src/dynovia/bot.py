@@ -11,10 +11,7 @@ the same question is never asked twice.
 
 from __future__ import annotations
 
-import base64
 import datetime as dt
-import gzip
-import io
 import logging
 import plistlib
 import re
@@ -418,12 +415,6 @@ MAX_UPLOAD = 20 * 1024 * 1024
 """What Telegram will hand a bot at all. A saved page is under a megabyte, but
 a .webarchive carries every image and script with it and runs to several."""
 
-MAX_UNPACKED = 20 * 1024 * 1024
-"""Ceiling on what a .b64 may expand to. Only the owner can send anything here,
-so this is not a defence against an attacker - it is a defence against a file
-that turns out not to be what it looked like."""
-
-
 def _from_owner(update: dict) -> bool:
     """This bot serves exactly one person.
 
@@ -475,27 +466,10 @@ def _as_page(raw: bytes) -> bytes:
         return _main_resource(raw)
     if head.startswith(b"<"):
         return raw
-    return _unpack(raw)
-
-
-def _unpack(raw: bytes) -> bytes:
-    """base64 of a gzipped page, back into the page.
-
-    Read with a ceiling rather than all at once, so a file that expands beyond
-    all reason is refused instead of unpacked first and judged afterwards.
-    """
-    try:
-        packed = base64.b64decode(b"".join(raw.split()), validate=True)
-        with gzip.GzipFile(fileobj=io.BytesIO(packed)) as unzipped:
-            page = unzipped.read(MAX_UNPACKED + 1)
-    except Exception as problem:  # noqa: BLE001 - every failure reads the same
-        raise ValueError(
-            "nie rozpoznaję tego pliku. Spodziewam się strony meczu: "
-            "„Kompletna witryna” z Opcji, plik ze Skrótu albo Ctrl+S"
-        ) from problem
-    if len(page) > MAX_UNPACKED:
-        raise ValueError("po rozpakowaniu jest absurdalnie duży")
-    return page
+    raise ValueError(
+        "nie rozpoznaję tego pliku. Wyślij stronę meczu: Udostępnij → Opcje → "
+        "Kompletna witryna"
+    )
 
 
 def _main_resource(raw: bytes) -> bytes:

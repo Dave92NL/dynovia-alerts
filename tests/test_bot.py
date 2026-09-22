@@ -4,6 +4,7 @@ import base64
 import datetime as dt
 import gzip
 import pathlib
+import plistlib
 
 import pytest
 
@@ -330,3 +331,55 @@ def test_a_file_that_expands_beyond_reason_is_refused(conn, monkeypatch):
     bot._dispatch(conn, {"message": message(document=document("protokol.b64"))})
 
     assert said[0].startswith("❌")
+
+
+def webarchive(page: bytes) -> bytes:
+    """The shape Safari writes for Udostępnij → Opcje → Kompletna witryna."""
+    return plistlib.dumps(
+        {
+            "WebMainResource": {
+                "WebResourceData": page,
+                "WebResourceMIMEType": "text/html",
+                "WebResourceTextEncodingName": "UTF-8",
+                "WebResourceURL": "https://www.laczynaspilka.pl/rozgrywki/mecz/x",
+            },
+            "WebSubresources": [],
+        },
+        fmt=plistlib.FMT_BINARY,
+    )
+
+
+def test_a_webarchive_is_read_from_its_main_resource(conn, monkeypatch):
+    monkeypatch.setattr(bot.players, "load_roster", lambda path: REGISTRY)
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(
+        bot.telegram, "get_file", lambda file_id: webarchive(PROTOCOL.read_bytes())
+    )
+    bot._dispatch(conn, {"message": message(document=document("strona.webarchive"))})
+
+    assert said[0].startswith("✅ Protokół")
+    assert db.match_appearances(conn, db.match_ids(conn)[GROM])
+
+
+def test_a_webarchive_holding_only_the_shell_says_so(conn, monkeypatch):
+    # The open question about this route: Safari may archive the server's empty
+    # Angular shell rather than the rendered page. If it does, the owner has to
+    # be told that, not left with silence.
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(
+        bot.telegram, "get_file", lambda file_id: webarchive(b"<html><body></body></html>")
+    )
+    bot._dispatch(conn, {"message": message(document=document("strona.webarchive"))})
+
+    assert "składów" in said[0]
+
+
+def test_something_that_is_not_a_webarchive_is_named_as_such(conn, monkeypatch):
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(bot.telegram, "get_file", lambda file_id: b"zwykly tekst")
+    bot._dispatch(conn, {"message": message(document=document("strona.webarchive"))})
+
+    assert ".webarchive" in said[0]

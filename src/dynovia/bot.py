@@ -16,6 +16,7 @@ import datetime as dt
 import gzip
 import io
 import logging
+import plistlib
 import re
 
 from dynovia import db, differ, players, protokol, stats
@@ -413,9 +414,9 @@ def poll(conn) -> None:
             log.exception("update %s failed", update.get("update_id"))
 
 
-MAX_UPLOAD = 5 * 1024 * 1024
-"""A saved protocol page is under a megabyte. Anything much larger is not one,
-and there is no reason to pull it down to find that out."""
+MAX_UPLOAD = 20 * 1024 * 1024
+"""What Telegram will hand a bot at all. A saved page is under a megabyte, but
+a .webarchive carries every image and script with it and runs to several."""
 
 MAX_UNPACKED = 20 * 1024 * 1024
 """Ceiling on what a .b64 may expand to. Only the owner can send anything here,
@@ -479,6 +480,23 @@ def _unpack(raw: bytes) -> bytes:
     return page
 
 
+def _main_resource(raw: bytes) -> bytes:
+    """The page out of a Safari .webarchive - Udostępnij → Opcje → Kompletna
+    witryna.
+
+    A webarchive is a binary plist holding the main document plus every
+    subresource. Whether its main document is the rendered DOM or the empty
+    shell the server sent decides whether this route works at all; the bot says
+    which one it got rather than guessing, so one sent file settles it.
+    """
+    try:
+        archive = plistlib.loads(raw)
+        page = archive["WebMainResource"]["WebResourceData"]
+    except Exception as problem:  # noqa: BLE001 - every failure reads the same
+        raise ValueError("to nie wygląda na plik .webarchive") from problem
+    return page
+
+
 def _receive_protocol(conn, document: dict) -> str:
     """A protocol page sent from the phone, via the Shortcut - see web/app.js.
 
@@ -487,20 +505,26 @@ def _receive_protocol(conn, document: dict) -> str:
     has to name the likely cause rather than just failing.
     """
     name = document.get("file_name") or "plik"
-    if not name.lower().endswith((".html", ".htm", ".b64")):
-        return f"❌ {name}: przyjmuję tylko .b64 ze Skrótu albo .html z Ctrl+S."
+    lowered = name.lower()
+    if not lowered.endswith((".html", ".htm", ".b64", ".webarchive")):
+        return (
+            f"❌ {name}: przyjmuję .b64 ze Skrótu, .webarchive z „Kompletnej "
+            "witryny” albo .html z Ctrl+S."
+        )
     if (document.get("file_size") or 0) > MAX_UPLOAD:
-        return f"❌ {name}: za duży, protokół waży poniżej megabajta."
+        return f"❌ {name}: większy niż 20 MB, tyle Telegram nie odda botowi."
 
     raw = telegram.get_file(document["file_id"])
-    if name.lower().endswith(".b64"):
-        # iOS refuses to carry 657 kB out of the JavaScript action - see the
-        # instructions in web/app.js - so the Shortcut gzips the page first.
-        # What the parser gets is still byte for byte the page itself.
-        try:
+    try:
+        if lowered.endswith(".b64"):
+            # iOS refuses to carry 657 kB out of the JavaScript action - see
+            # the instructions in web/app.js - so the Shortcut gzips the page
+            # first. The parser still gets the page byte for byte.
             raw = _unpack(raw)
-        except ValueError as problem:
-            return f"❌ {name}: {problem}"
+        elif lowered.endswith(".webarchive"):
+            raw = _main_resource(raw)
+    except ValueError as problem:
+        return f"❌ {name}: {problem}"
 
     result = protokol.import_html(
         conn, name, raw.decode("utf-8", errors="replace"), players.load_roster(ROSTER_PATH)

@@ -232,32 +232,73 @@ def import_directory(
     return conflicts
 
 
+@dataclass(frozen=True, slots=True)
+class Imported:
+    """What one protocol turned into. The counts exist for the Telegram reply:
+    a file arriving from a phone has to say what it did, because nobody is
+    watching the log."""
+
+    match: MatchKey | None
+    conflicts: list[tuple[int, merge.Conflict]] = field(default_factory=list)
+    appearances: int = 0
+    goals: int = 0
+    cards: int = 0
+    home: str = ""
+    away: str = ""
+
+    @property
+    def empty(self) -> bool:
+        """No squads parsed at all - not a protocol page, or the shell of one."""
+        return not (self.home or self.away)
+
+
 def import_file(
     conn: sqlite3.Connection, path: Path, registry: dict[str, str]
 ) -> list[tuple[int, merge.Conflict]]:
-    protocol = parse_protocol(path.read_text(encoding="utf-8", errors="replace"))
+    html = path.read_text(encoding="utf-8", errors="replace")
+    return import_html(conn, path.name, html, registry).conflicts
+
+
+def import_html(
+    conn: sqlite3.Connection, label: str, html: str, registry: dict[str, str]
+) -> Imported:
+    """The import itself, given the page as text rather than as a file.
+
+    Split out from import_file so the same protocol can arrive from a phone
+    over Telegram, where there is no file on disk to point at.
+    """
+    protocol = parse_protocol(html)
     match = find_match(conn, protocol)
     if match is None:
         log.warning(
             "protokol %s: %s - %s nie pasuje do zadnego meczu w bazie",
-            path.name,
+            label,
             protocol.home or "?",
             protocol.away or "?",
         )
-        return []
+        return Imported(None, home=protocol.home, away=protocol.away)
 
     appearances, goals, cards = to_records(protocol, match)
     log.info(
         "protokol %s: %d wystepow, %d bramek, %d kartek",
-        path.name,
+        label,
         len(appearances),
         len(goals),
         len(cards),
     )
-    return (
+    conflicts = (
         db.store_lineups(conn, appearances, SOURCE, registry)
         + db.store_goals(conn, goals, SOURCE, registry)
         + db.store_cards(conn, cards, SOURCE, registry)
+    )
+    return Imported(
+        match,
+        conflicts,
+        len(appearances),
+        len(goals),
+        len(cards),
+        protocol.home,
+        protocol.away,
     )
 
 

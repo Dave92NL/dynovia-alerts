@@ -15,8 +15,8 @@ import datetime as dt
 import logging
 import re
 
-from dynovia import db, differ, players, stats
-from dynovia.config import ROSTER_PATH
+from dynovia import db, differ, players, protokol, stats
+from dynovia.config import ROSTER_PATH, TELEGRAM_CHAT_ID
 from dynovia.models import normalize_player, season_for
 from dynovia.notify import telegram, webpush
 
@@ -410,7 +410,31 @@ def poll(conn) -> None:
             log.exception("update %s failed", update.get("update_id"))
 
 
+MAX_UPLOAD = 5 * 1024 * 1024
+"""A saved protocol page is under a megabyte. Anything much larger is not one,
+and there is no reason to pull it down to find that out."""
+
+
+def _from_owner(update: dict) -> bool:
+    """This bot serves exactly one person.
+
+    Without this anyone who finds the bot can run its commands - the answer
+    goes to the owner's chat, but the work still happens, and /asysta writes to
+    the database. Once files are accepted too, a stranger could put a protocol
+    of their choosing into it.
+    """
+    message = update.get("message") or update.get("edited_message") or {}
+    chat = message.get("chat") or update.get("callback_query", {}).get(
+        "message", {}
+    ).get("chat", {})
+    return bool(TELEGRAM_CHAT_ID) and str(chat.get("id")) == str(TELEGRAM_CHAT_ID)
+
+
 def _dispatch(conn, update: dict) -> None:
+    if not _from_owner(update):
+        log.warning("zignorowano update spoza czatu wlasciciela")
+        return
+
     if "callback_query" in update:
         query = update["callback_query"]
         answer = handle_callback(conn, query.get("data", ""))
@@ -419,8 +443,47 @@ def _dispatch(conn, update: dict) -> None:
         return
 
     message = update.get("message") or update.get("edited_message") or {}
+    if document := message.get("document"):
+        telegram.send(_receive_protocol(conn, document))
+        return
+
     text = (message.get("text") or "").strip()
     if not text.startswith("/"):
         return
     reply, buttons = handle_command(conn, text)
     telegram.send(reply, buttons=buttons, as_html=reply.startswith("<pre>"))
+
+
+def _receive_protocol(conn, document: dict) -> str:
+    """A protocol page sent from the phone, via the Shortcut - see web/app.js.
+
+    The reply is the only feedback there is: nobody reads the Actions log from
+    a phone, so every outcome has to say which one it was, and an empty page
+    has to name the likely cause rather than just failing.
+    """
+    name = document.get("file_name") or "plik"
+    if not name.lower().endswith((".html", ".htm")):
+        return f"❌ {name}: przyjmuję tylko .html ze Skrótu."
+    if (document.get("file_size") or 0) > MAX_UPLOAD:
+        return f"❌ {name}: za duży, protokół waży poniżej megabajta."
+
+    raw = telegram.get_file(document["file_id"])
+    result = protokol.import_html(
+        conn, name, raw.decode("utf-8", errors="replace"), players.load_roster(ROSTER_PATH)
+    )
+    if result.empty:
+        return (
+            f"❌ {name}: nie ma w tym pliku żadnych składów.\n"
+            "Tak wygląda strona zapisana przez Safari zamiast przez Skrót - "
+            "Safari zapisuje pustą skorupę, bez danych meczu."
+        )
+    if result.match is None:
+        return (
+            f"❌ {name}: {result.home} – {result.away} nie pasuje do żadnego "
+            "meczu w bazie."
+        )
+    return (
+        f"✅ Protokół: {result.home} – {result.away}\n"
+        f"{result.appearances} występów, {result.goals} bramek, "
+        f"{result.cards} kartek."
+    )

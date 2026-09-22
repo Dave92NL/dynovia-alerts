@@ -14,3 +14,12 @@ test("mobile design has clear hierarchy for match, statistics, and table", () =>
   assert.match(app, /stat-summary/);
   assert.match(app, /table-card/);
 });
+
+test("the sources tab explains how to send a protocol from a phone", () => {
+  // Safari is a requirement, not advice: the Shortcuts JS action gets nothing
+  // from Chrome or Firefox on iOS. If that sentence goes, so does the only
+  // thing standing between the owner and a silently empty file.
+  assert.match(app, /Tylko Safari/);
+  assert.match(app, /outerHTML/);
+  assert.match(html, /\.help code/);
+});

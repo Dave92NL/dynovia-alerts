@@ -203,8 +203,29 @@ function renderSources() {
   $("sources").innerHTML = `<div class="card"><table>
     <thead><tr><th class="name">Źródło</th><th class="num">Mecze</th><th class="num">Ostatnio</th></tr></thead>
     <tbody>${body}</tbody></table></div>
-    <div class="card" id="pushCard"></div>`;
+    <div class="card" id="pushCard"></div>
+    ${protocolHelp()}`;
   renderPush();
+}
+
+/* Protokołu PZPN nie da się pobrać - patrz protokol.py. Z telefonu zostaje
+   Skrót, bo Safari zapisuje pustą skorupę Angulara zamiast wyrenderowanej
+   strony, a akcja "Uruchom JavaScript na stronie" oddaje to, co widać. */
+function protocolHelp() {
+  return `<div class="card help">
+    <span class="tag">Protokół PZPN z telefonu</span>
+    <p><b>Tylko Safari.</b> Chrome i Firefox na iOS przekazują do arkusza
+    Udostępnij sam adres, nie stronę, więc Skrót nie ma czego odczytać.</p>
+    <p>Skrót budujesz raz, trzy akcje:</p>
+    <ol>
+      <li>Uruchom JavaScript na stronie:
+        <code>return document.documentElement.outerHTML</code></li>
+      <li>Ustaw nazwę: <code>protokol.html</code></li>
+      <li>Udostępnij → Telegram → czat z botem</li>
+    </ol>
+    <p>Potem: strona meczu na laczynaspilka.pl w Safari → Udostępnij → Skrót →
+    wyślij. Bot odpisze, co zaimportował, albo dlaczego nie.</p>
+  </div>`;
 }
 
 /* --- powiadomienia push -------------------------------------------------- */

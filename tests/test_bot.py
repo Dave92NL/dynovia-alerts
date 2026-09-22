@@ -1,6 +1,7 @@
 """Bot commands and the buttons that settle a question for good."""
 
 import datetime as dt
+import pathlib
 
 import pytest
 
@@ -15,6 +16,19 @@ REGISTRY = {
     normalize_player(name): name
     for name in ("Filip Goleś", "Arkadiusz Kłoda", "Andrzej Goleś")
 }
+
+
+OWNER = 999
+
+
+@pytest.fixture(autouse=True)
+def owner_chat(monkeypatch):
+    """Updates in these tests come from the owner unless a case says otherwise."""
+    monkeypatch.setattr(bot, "TELEGRAM_CHAT_ID", str(OWNER))
+
+
+def message(**fields) -> dict:
+    return {"chat": {"id": OWNER}, **fields}
 
 
 @pytest.fixture
@@ -107,7 +121,7 @@ def test_answering_who_a_player_is_records_the_alias(conn):
 def test_polling_advances_the_offset_even_when_a_command_blows_up(conn, monkeypatch):
     sent = []
     monkeypatch.setattr(
-        bot.telegram, "get_updates", lambda offset: [{"update_id": 41, "message": {"text": "/tabela"}}]
+        bot.telegram, "get_updates", lambda offset: [{"update_id": 41, "message": message(text="/tabela")}]
     )
     monkeypatch.setattr(bot.telegram, "send", lambda *a, **k: sent.append(a))
     db.set_setting(conn, bot.OFFSET_KEY, "1")  # not a fresh bot
@@ -165,8 +179,8 @@ def test_a_fresh_bot_skips_the_backlog(conn, monkeypatch):
         bot.telegram,
         "get_updates",
         lambda offset: [
-            {"update_id": 10, "message": {"text": "/tabela"}},
-            {"update_id": 11, "message": {"text": "/ostatni"}},
+            {"update_id": 10, "message": message(text="/tabela")},
+            {"update_id": 11, "message": message(text="/ostatni")},
         ],
     )
     monkeypatch.setattr(bot.telegram, "send", lambda *a, **k: sent.append(a))
@@ -193,3 +207,80 @@ def test_a_failed_push_is_reported_as_text_not_as_an_object(conn, monkeypatch):
     text, _ = bot.handle_command(conn, "/push")
     assert isinstance(text, str)
     assert "403" in text
+
+
+# --- protokol przyslany z telefonu ----------------------------------------
+
+PROTOCOL = pathlib.Path("tests/fixtures/laczynaspilka/grom-2026-09-19.html")
+GROM = ("2026/27", "dynovia dynow", "grom handzlowka")
+
+
+def document(name="protokol.html", size=700_000) -> dict:
+    return {"file_name": name, "file_size": size, "file_id": "abc"}
+
+
+@pytest.fixture
+def delivered(monkeypatch):
+    """Whatever the bot decides to say back."""
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(
+        bot.telegram, "get_file", lambda file_id: PROTOCOL.read_bytes()
+    )
+    return said
+
+
+def test_a_protocol_sent_from_the_phone_is_imported(conn, delivered, monkeypatch):
+    monkeypatch.setattr(bot.players, "load_roster", lambda path: REGISTRY)
+    bot._dispatch(conn, {"message": message(document=document())})
+
+    assert delivered[0].startswith("✅ Protokół")
+    assert "Grom Handzlówka" in delivered[0]
+    # The counts are the whole point of the reply - nobody reads the log from
+    # a phone.
+    assert "występów" in delivered[0]
+    assert db.match_appearances(conn, db.match_ids(conn)[GROM])
+
+
+def test_a_saved_shell_says_why_it_is_empty(conn, delivered, monkeypatch):
+    # What Safari produces: the Angular shell, no squads anywhere in it.
+    monkeypatch.setattr(bot.telegram, "get_file", lambda file_id: b"<html></html>")
+    bot._dispatch(conn, {"message": message(document=document())})
+
+    assert "Safari" in delivered[0]
+    assert "Skrót" in delivered[0]
+
+
+def test_anything_that_is_not_html_is_refused_before_downloading(conn, monkeypatch):
+    said, fetched = [], []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(bot.telegram, "get_file", lambda f: fetched.append(f) or b"")
+    bot._dispatch(conn, {"message": message(document=document("zdjecie.jpg"))})
+
+    assert said[0].startswith("❌")
+    assert fetched == []
+
+
+def test_an_oversized_file_is_refused_before_downloading(conn, monkeypatch):
+    said, fetched = [], []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(bot.telegram, "get_file", lambda f: fetched.append(f) or b"")
+    bot._dispatch(
+        conn, {"message": message(document=document(size=bot.MAX_UPLOAD + 1))}
+    )
+
+    assert said[0].startswith("❌")
+    assert fetched == []
+
+
+def test_a_stranger_gets_nothing_done_and_no_answer(conn, delivered):
+    # The reply would go to the owner's chat, but the work would still happen -
+    # and this one writes to the database.
+    bot._dispatch(conn, {"message": {"chat": {"id": 1}, "document": document()}})
+    assert delivered == []
+    assert not db.match_appearances(conn, db.match_ids(conn)[GROM])
+
+
+def test_a_stranger_cannot_run_commands_either(conn, delivered):
+    bot._dispatch(conn, {"message": {"chat": {"id": 1}, "text": "/tabela"}})
+    assert delivered == []

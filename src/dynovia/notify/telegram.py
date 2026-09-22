@@ -67,6 +67,25 @@ def get_updates(offset: int) -> list[dict]:
     return result.get("result", [])
 
 
+FILES = "https://api.telegram.org/file/bot{token}/{path}"
+"""Files are served from their own host, not from /bot{token}/{method}."""
+
+
+def get_file(file_id: str) -> bytes:
+    """Download a document somebody sent the bot.
+
+    Two calls, because Telegram hands out the storage path separately from the
+    bytes. The cap on this route is 20 MB; what comes through it is a saved
+    protocol page, which is under one.
+    """
+    path = _call("getFile", {"file_id": file_id})["result"]["file_path"]
+    response = httpx.get(
+        FILES.format(token=TELEGRAM_BOT_TOKEN, path=path), timeout=60.0
+    )
+    response.raise_for_status()
+    return response.content
+
+
 def answer_callback(callback_id: str, text: str = "") -> None:
     """Stops the button spinning. Telegram shows the text as a small toast."""
     _call("answerCallbackQuery", {"callback_query_id": callback_id, "text": text})

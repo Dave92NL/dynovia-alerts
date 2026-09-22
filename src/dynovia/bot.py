@@ -463,6 +463,21 @@ def _dispatch(conn, update: dict) -> None:
     telegram.send(reply, buttons=buttons, as_html=reply.startswith("<pre>"))
 
 
+def _as_page(raw: bytes) -> bytes:
+    """Whatever arrived, turned back into the match page.
+
+    The file name is no guide and never was: a webarchive shared out of Safari
+    on iOS reaches the bot called "file", with no extension at all. So the
+    first bytes decide - they are the one thing the sender cannot mangle.
+    """
+    head = raw.lstrip()[:16]
+    if head.startswith(b"bplist00"):
+        return _main_resource(raw)
+    if head.startswith(b"<"):
+        return raw
+    return _unpack(raw)
+
+
 def _unpack(raw: bytes) -> bytes:
     """base64 of a gzipped page, back into the page.
 
@@ -474,7 +489,10 @@ def _unpack(raw: bytes) -> bytes:
         with gzip.GzipFile(fileobj=io.BytesIO(packed)) as unzipped:
             page = unzipped.read(MAX_UNPACKED + 1)
     except Exception as problem:  # noqa: BLE001 - every failure reads the same
-        raise ValueError("nie udało się rozpakować, to nie jest plik ze Skrótu") from problem
+        raise ValueError(
+            "nie rozpoznaję tego pliku. Spodziewam się strony meczu: "
+            "„Kompletna witryna” z Opcji, plik ze Skrótu albo Ctrl+S"
+        ) from problem
     if len(page) > MAX_UNPACKED:
         raise ValueError("po rozpakowaniu jest absurdalnie duży")
     return page
@@ -505,24 +523,12 @@ def _receive_protocol(conn, document: dict) -> str:
     has to name the likely cause rather than just failing.
     """
     name = document.get("file_name") or "plik"
-    lowered = name.lower()
-    if not lowered.endswith((".html", ".htm", ".b64", ".webarchive")):
-        return (
-            f"❌ {name}: przyjmuję .b64 ze Skrótu, .webarchive z „Kompletnej "
-            "witryny” albo .html z Ctrl+S."
-        )
     if (document.get("file_size") or 0) > MAX_UPLOAD:
         return f"❌ {name}: większy niż 20 MB, tyle Telegram nie odda botowi."
 
     raw = telegram.get_file(document["file_id"])
     try:
-        if lowered.endswith(".b64"):
-            # iOS refuses to carry 657 kB out of the JavaScript action - see
-            # the instructions in web/app.js - so the Shortcut gzips the page
-            # first. The parser still gets the page byte for byte.
-            raw = _unpack(raw)
-        elif lowered.endswith(".webarchive"):
-            raw = _main_resource(raw)
+        raw = _as_page(raw)
     except ValueError as problem:
         return f"❌ {name}: {problem}"
 

@@ -254,14 +254,29 @@ def test_a_saved_shell_says_why_it_is_empty(conn, delivered, monkeypatch):
     assert "Skrót" in delivered[0]
 
 
-def test_anything_that_is_not_html_is_refused_before_downloading(conn, monkeypatch):
-    said, fetched = [], []
+def test_the_name_decides_nothing_and_the_content_decides_everything(conn, monkeypatch):
+    # A webarchive shared out of Safari on iOS arrives called "file", with no
+    # extension. Routing on the name rejected exactly the thing it was built
+    # to accept, so the first bytes are what counts now.
+    monkeypatch.setattr(bot.players, "load_roster", lambda path: REGISTRY)
+    said = []
     monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
-    monkeypatch.setattr(bot.telegram, "get_file", lambda f: fetched.append(f) or b"")
+    monkeypatch.setattr(
+        bot.telegram, "get_file", lambda file_id: webarchive(PROTOCOL.read_bytes())
+    )
+    bot._dispatch(conn, {"message": message(document=document("file"))})
+
+    assert said[0].startswith("✅ Protokół")
+
+
+def test_a_file_that_is_no_kind_of_page_is_named_as_such(conn, monkeypatch):
+    said = []
+    monkeypatch.setattr(bot.telegram, "send", lambda text, **k: said.append(text))
+    monkeypatch.setattr(bot.telegram, "get_file", lambda f: bytes.fromhex("ffd8ffe000104a464946"))
     bot._dispatch(conn, {"message": message(document=document("zdjecie.jpg"))})
 
     assert said[0].startswith("❌")
-    assert fetched == []
+    assert "Kompletna witryna" in said[0]
 
 
 def test_an_oversized_file_is_refused_before_downloading(conn, monkeypatch):

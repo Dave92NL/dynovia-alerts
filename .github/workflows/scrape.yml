@@ -41,6 +41,23 @@ jobs:
         run: |
           git config user.name "dynovia-bot"
           git config user.email "actions@users.noreply.github.com"
+
+          # A SQLite file cannot be merged. When two runs both write one -
+          # after a cancel, a timeout, a retried job - a rebase stops dead on a
+          # binary conflict and takes the whole job down with it. So nobody
+          # merges: whoever pushed first wins and the late one throws its own
+          # work away.
+          #
+          # Nothing is lost by that. The scrape repeats on the next tick,
+          # protokoly/ re-imports, and a protocol that arrived over Telegram
+          # rolls back together with the offset that would have marked it read,
+          # because the two live in the same file - so Telegram hands it over
+          # again.
+          take_origin() {
+            git rebase --abort 2>/dev/null || true
+            git fetch --quiet origin main
+            git reset --hard --quiet origin/main
+          }
           # The job keeps its own clock for five hours, which is longer than
           # the gap between starts GitHub actually gives us. The next start
           # therefore tends to arrive while this one is still ticking, and
@@ -61,16 +78,24 @@ jobs:
             # waits for the loop to end, which is up to five hours, and the
             # only reason it ever arrived sooner was the pull below happening
             # to run whenever the data moved.
-            git pull --rebase --autostash --quiet || echo "pull nieudany, lece dalej"
+            # Nothing of ours is uncommitted here - the previous tick either
+            # pushed or reset - so this is a fast-forward or it is a mess, and
+            # a mess is resolved the same way as everything else.
+            git pull --rebase --autostash --quiet || take_origin
             python -m dynovia.run
             git add -A data web/data
             if git diff --cached --quiet; then
               echo "tik $tick: nic się nie zmieniło"
             else
               git commit -m "dane: $(date -u '+%Y-%m-%d %H:%M') UTC"
-              # Another run may have pushed while this one was scraping.
-              git pull --rebase --autostash
-              git push
+              # Another run may have pushed while this one was scraping, and
+              # the push can still lose a race after a clean pull.
+              if git pull --rebase --autostash && git push --quiet; then
+                echo "tik $tick: dane wypchniete"
+              else
+                take_origin
+                echo "tik $tick: ktos byl szybszy - biore jego stan, licze od nowa"
+              fi
             fi
             # Listening, not sleeping: this returns the second a protocol
             # or a command is sent, so the phone does not wait out a tick it

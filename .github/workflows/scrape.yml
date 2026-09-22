@@ -2,9 +2,10 @@ name: scrape
 
 on:
   schedule:
-    # Hourly, because that is roughly the best GitHub will honour anyway - a
-    # */10 schedule measured out at two runs in eleven hours. The ten-minute
-    # tick lives inside the job now; this only has to start one.
+    # Asking hourly and measuring what arrives: over thirty hours the gaps ran
+    # 2h15 to 6h15, averaging four hours, and asking every ten minutes had got
+    # the same. What GitHub honours does not depend on what we request, so this
+    # only has to wake the job up; the job does its own ticking.
     - cron: "0 * * * *"
   workflow_dispatch:
 
@@ -19,7 +20,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +31,7 @@ jobs:
 
       - run: pip install -e .
 
-      - name: scrape on a ten-minute tick for the next hour
+      - name: scrape on a ten-minute tick for the next five hours
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -40,12 +41,22 @@ jobs:
         run: |
           git config user.name "dynovia-bot"
           git config user.email "actions@users.noreply.github.com"
-          # The job keeps its own clock. A schedule event only has to arrive
-          # once an hour for the ten-minute tick to hold, which matters because
-          # a goal notified four hours late is not a notification. Which
-          # sources actually get fetched is still poll_interval's call, so this
-          # does not mean 144 hits a day on a village club's website.
-          for tick in $(seq 6); do
+          # The job keeps its own clock for five hours, which is longer than
+          # the gap between starts GitHub actually gives us. The next start
+          # therefore tends to arrive while this one is still ticking, and
+          # concurrency queues it to begin the moment this ends - so the runs
+          # chain instead of leaving four hours of silence between them.
+          #
+          # A deadline rather than a fixed count: tick duration varies with the
+          # network, and a count that overruns timeout-minutes would end the
+          # job as a failure and send a "workflow padł" that is not true.
+          #
+          # Which sources actually get fetched is still poll_interval's call,
+          # so this is not 30 hits a day on a village club's website.
+          deadline=$(( $(date +%s) + 300 * 60 ))
+          tick=0
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            tick=$(( tick + 1 ))
             python -m dynovia.run
             git add -A data web/data
             if git diff --cached --quiet; then
@@ -56,10 +67,9 @@ jobs:
               git pull --rebase --autostash
               git push
             fi
-            # Not `[ ... ] && sleep`: on the last tick that tests false, and
-            # under `set -e` a false test ends the job as a failure.
-            if [ "$tick" -lt 6 ]; then sleep 600; fi
+            sleep 600
           done
+          echo "$tick tikow w tym przebiegu"
 
       - name: tell me if the run broke
         if: failure()

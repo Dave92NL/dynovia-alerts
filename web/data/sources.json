@@ -1,13 +1,13 @@
 [
  {
   "failures": 0,
-  "last": "2026-09-22T06:48:50.747394+00:00",
+  "last": "2026-09-22T12:05:14.116213+00:00",
   "matches": 28,
   "source": "90minut"
  },
  {
   "failures": 0,
-  "last": "2026-09-22T06:48:56.522056+00:00",
+  "last": "2026-09-22T12:05:23.366588+00:00",
   "matches": 7,
   "source": "futbolowo"
  },
@@ -19,12 +19,12 @@
  },
  {
   "failures": 0,
-  "last": "2026-09-22T06:48:59.560349+00:00",
+  "last": "2026-09-22T12:05:25.420419+00:00",
   "matches": 6,
   "source": "podkarpacielive"
  },
  {
-  "failures": 6,
+  "failures": 7,
   "last": "2026-09-21T04:43:25.312257+00:00",
   "matches": 27,
   "source": "regiowyniki"

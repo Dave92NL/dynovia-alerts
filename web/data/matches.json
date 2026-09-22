@@ -3,10 +3,133 @@
   "atHome": true,
   "away": "KS Dąbrówki",
   "awayScore": 1,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-08-16",
   "home": "Dynovia Dynów",
   "homeScore": 1,
+  "lineup": [
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Arkadiusz Kłoda",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Filip Goleś",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Grzegorz Szczepański",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakub Uryć",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Krystian Skubisz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Paweł Szczawiński",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Ruslan Kovtok",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Sylwester Paszko",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Tomasz Bielaszka",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Łukasz Kozioł",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakob Dzik",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakub Bury",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Kamil Socha",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Przemysław Barnaś",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Sebastian Kustra",
+    "ours": true,
+    "started": false
+   }
+  ],
   "round": 1,
   "scorers": [
    {
@@ -15,16 +138,156 @@
    }
   ],
   "status": "finished",
+  "theirGoals": [],
   "time": "17:00"
  },
  {
   "atHome": true,
   "away": "Polonia Hyżne",
   "awayScore": 0,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-08-23",
   "home": "Dynovia Dynów",
   "homeScore": 6,
+  "lineup": [
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Arkadiusz Kłoda",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Filip Goleś",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Grzegorz Szczepański",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Karol Stankiewicz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Krystian Skubisz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Michael Londono Silva",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Paweł Szczawiński",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Ruslan Kovtok",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Sylwester Paszko",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Tomasz Bielaszka",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Łukasz Kozioł",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakob Dzik",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakub Bury",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakub Ćwikła",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Kamil Socha",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Patryk Duchniak",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Wojciech Mnich",
+    "ours": true,
+    "started": false
+   }
+  ],
   "round": 2,
   "scorers": [
    {
@@ -41,16 +304,19 @@
    }
   ],
   "status": "finished",
+  "theirGoals": [],
   "time": "17:00"
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": 4,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-08-30",
   "home": "Markovia Markowa",
   "homeScore": 1,
+  "lineup": [],
   "round": 3,
   "scorers": [
    {
@@ -71,16 +337,132 @@
    }
   ],
   "status": "finished",
+  "theirGoals": [],
   "time": "11:00"
  },
  {
   "atHome": true,
   "away": "Plantator Nienadówka",
   "awayScore": 1,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-09-06",
   "home": "Dynovia Dynów",
   "homeScore": 2,
+  "lineup": [
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Arkadiusz Kłoda",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Filip Goleś",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Grzegorz Szczepański",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Jakub Uryć",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Krystian Skubisz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Michael Londono Silva",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Paweł Szczawiński",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Ruslan Kovtok",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Sylwester Paszko",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Tomasz Bielaszka",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Łukasz Kozioł",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Kamil Socha",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Przemysław Barnaś",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": null,
+    "minuteOut": null,
+    "minutes": false,
+    "name": "Sebastian Kustra",
+    "ours": true,
+    "started": false
+   }
+  ],
   "round": 4,
   "scorers": [
    {
@@ -93,16 +475,19 @@
    }
   ],
   "status": "finished",
+  "theirGoals": [],
   "time": "16:00"
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": 6,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-09-13",
   "home": "Grodziszczanka Grodzisko Dolne",
   "homeScore": 1,
+  "lineup": [],
   "round": 5,
   "scorers": [
    {
@@ -127,16 +512,159 @@
    }
   ],
   "status": "finished",
+  "theirGoals": [],
   "time": "16:30"
  },
  {
   "atHome": true,
   "away": "Grom Handzlówka",
   "awayScore": 1,
+  "cards": [
+   {
+    "color": "yellow",
+    "minute": 60,
+    "name": "Krystian Skubisz",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 83,
+    "name": "Sylwester Paszko",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 90,
+    "name": "Paweł Szczawiński",
+    "ours": true
+   }
+  ],
   "competition": "Klasa A",
   "date": "2026-09-19",
   "home": "Dynovia Dynów",
   "homeScore": 3,
+  "lineup": [
+   {
+    "minuteIn": 0,
+    "minuteOut": 77,
+    "minutes": true,
+    "name": "Filip Goleś",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Grzegorz Szczepański",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 60,
+    "minutes": true,
+    "name": "Jakob Dzik",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 60,
+    "minutes": true,
+    "name": "Kamil Socha",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 75,
+    "minutes": true,
+    "name": "Karol Stankiewicz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Krystian Skubisz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Michael Londono Silva",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Ruslan Kovtok",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Sylwester Paszko",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Tomasz Bielaszka",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Łukasz Kozioł",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 60,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Arkadiusz Kłoda",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": 60,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Przemysław Barnaś",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": 75,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Jakub Uryć",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": 77,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Paweł Szczawiński",
+    "ours": true,
+    "started": false
+   }
+  ],
   "round": 6,
   "scorers": [
    {
@@ -153,292 +681,359 @@
    }
   ],
   "status": "finished",
+  "theirGoals": [],
   "time": "16:30"
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-09-27",
   "home": "Astra Medynia Głogowska",
   "homeScore": null,
+  "lineup": [],
   "round": 7,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": "14:00"
  },
  {
   "atHome": true,
   "away": "Crasnovia Krasne",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-10-03",
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 8,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": "16:00"
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-10-11",
   "home": "Stal II Łańcut",
   "homeScore": null,
+  "lineup": [],
   "round": 9,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": "14:00"
  },
  {
   "atHome": true,
   "away": "KS Pawłokoma",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-10-18",
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 10,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": "15:00"
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-10-24",
   "home": "Sawa Sonina",
   "homeScore": null,
+  "lineup": [],
   "round": 11,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-10-31",
   "home": "Jawor Krzemienica",
   "homeScore": null,
+  "lineup": [],
   "round": 12,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Stobierna-Krzywe Stobierna",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-11-07",
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 13,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": "2026-11-11",
   "home": "Iskra Jawornik Polski",
   "homeScore": null,
+  "lineup": [],
   "round": 14,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "VI liga",
   "date": null,
   "home": "KS Dąbrówki",
   "homeScore": null,
+  "lineup": [],
   "round": 16,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Polonia Hyżne",
   "homeScore": null,
+  "lineup": [],
   "round": 17,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Markovia Markowa",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 18,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Plantator Nienadówka",
   "homeScore": null,
+  "lineup": [],
   "round": 19,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Grodziszczanka Grodzisko Dolne",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 20,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Grom Handzlówka",
   "homeScore": null,
+  "lineup": [],
   "round": 21,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Astra Medynia Głogowska",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 22,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Crasnovia Krasne",
   "homeScore": null,
+  "lineup": [],
   "round": 23,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Stal II Łańcut",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 24,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "KS Pawłokoma",
   "homeScore": null,
+  "lineup": [],
   "round": 25,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Sawa Sonina",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 26,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Jawor Krzemienica",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 27,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Stobierna-Krzywe Stobierna",
   "homeScore": null,
+  "lineup": [],
   "round": 28,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  },
  {
   "atHome": true,
   "away": "Iskra Jawornik Polski",
   "awayScore": null,
+  "cards": [],
   "competition": "Klasa A",
   "date": null,
   "home": "Dynovia Dynów",
   "homeScore": null,
+  "lineup": [],
   "round": 29,
   "scorers": [],
   "status": "scheduled",
+  "theirGoals": [],
   "time": null
  }
 ]

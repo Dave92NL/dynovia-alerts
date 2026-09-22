@@ -91,7 +91,7 @@ def _scorers(conn, match) -> list[str]:
     never mixed, or a 4-1 ends up with seven scorers."""
     rows = conn.execute(
         "SELECT g.source, g.minute, p.name FROM goals g"
-        " JOIN players p ON p.id = g.player_id"
+        " JOIN players p ON p.id = g.player_id AND p.ours = 1"
         " JOIN matches m ON m.id = g.match_id"
         " WHERE m.season = ? AND m.home_key = ? AND m.away_key = ?",
         (match.season, *match.key[1:]),
@@ -286,7 +286,7 @@ def cmd_assist(conn, args: str) -> tuple[str, list | None]:
             f"Nie znam nikogo takiego: {name.strip()}"
         ), None
     scorer = conn.execute(
-        "SELECT p.name FROM goals g JOIN players p ON p.id = g.player_id"
+        "SELECT p.name FROM goals g JOIN players p ON p.id = g.player_id AND p.ours = 1"
         " WHERE g.id = ?",
         (int(number),),
     ).fetchone()
@@ -368,7 +368,7 @@ def handle_callback(conn, data: str) -> str:
 def _answer_assist(conn, goal_id: int, choice: str) -> str:
     goal = conn.execute(
         "SELECT g.match_id, p.name AS scorer FROM goals g"
-        " JOIN players p ON p.id = g.player_id WHERE g.id = ?",
+        " JOIN players p ON p.id = g.player_id AND p.ours = 1 WHERE g.id = ?",
         (goal_id,),
     ).fetchone()
     if goal is None:

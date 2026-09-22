@@ -83,7 +83,10 @@ CREATE TABLE IF NOT EXISTS conflicts (
 CREATE TABLE IF NOT EXISTS players (
     id              INTEGER PRIMARY KEY,
     name            TEXT NOT NULL,
-    normalized_name TEXT NOT NULL UNIQUE
+    normalized_name TEXT NOT NULL UNIQUE,
+    -- 0 means an opposition player, stored only to fill in the other half of a
+    -- protocol. Every statistic in the app is ours, so every statistic says so.
+    ours            INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS player_aliases (
@@ -210,7 +213,25 @@ def connect(path=DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Columns added after the fact.
+
+    The database file lives in the repo and is years older than any new column
+    by the time one is needed, and CREATE TABLE IF NOT EXISTS never touches a
+    table that already exists. So the change has to be made explicitly.
+    """
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(players)")}
+    if "ours" not in columns:
+        # Everyone already stored was resolved against kadra.txt, so everyone
+        # already stored is ours. Only the protocol brings in anybody else.
+        conn.execute(
+            "ALTER TABLE players ADD COLUMN ours INTEGER NOT NULL DEFAULT 1"
+        )
+        conn.commit()
 
 
 def _to_row(match: MatchData) -> dict:
@@ -526,6 +547,27 @@ def _player_id(conn: sqlite3.Connection, name: str) -> int:
     ).fetchone()["id"]
 
 
+def _opponent_id(conn: sqlite3.Connection, name: str) -> int:
+    """An opposition player: recorded as written, never asked about.
+
+    kadra.txt holds our team, so resolving these would raise a question about
+    every single one. They are stored to fill in the other half of a protocol
+    and are kept out of every statistic by `ours`.
+
+    ours = 0 is set on insert only. A namesake already stored as ours keeps
+    that row: a shared surname must not turn one of our players into an
+    opponent.
+    """
+    conn.execute(
+        "INSERT OR IGNORE INTO players (name, normalized_name, ours)"
+        " VALUES (?, ?, 0)",
+        (name, normalize_player(name)),
+    )
+    return conn.execute(
+        "SELECT id FROM players WHERE normalized_name = ?", (normalize_player(name),)
+    ).fetchone()["id"]
+
+
 def _identify(
     conn: sqlite3.Connection,
     written: str,
@@ -574,7 +616,12 @@ def _store_player_rows(
     """Shared plumbing for lineups, goals and cards: resolve the player, then
     write. A row whose player cannot be identified is not written at all -
     a wrong attribution is worse than a missing one, and the question goes out
-    on Telegram instead."""
+    on Telegram instead.
+
+    registry=None means these rows are the opposition's: stored as written,
+    never resolved, never questioned. An empty registry is not the same thing -
+    that is our team with kadra.txt missing, and still worth asking about.
+    """
     ids = match_ids(conn)
     found: list[tuple[int, merge.Conflict]] = []
     with conn:
@@ -582,7 +629,10 @@ def _store_player_rows(
             match_id = ids.get(row.match)
             if match_id is None:
                 continue
-            player_id, conflict = _identify(conn, row.player, source, registry)
+            if registry is None:
+                player_id, conflict = _opponent_id(conn, row.player), None
+            else:
+                player_id, conflict = _identify(conn, row.player, source, registry)
             if conflict is not None:
                 # Stored as well as returned: an unanswered question has to
                 # survive until /konflikty can put buttons under it.
@@ -716,7 +766,7 @@ def goals_needing_assist(conn: sqlite3.Connection, season: str) -> list[sqlite3.
         "SELECT g.id, g.match_id, g.minute, g.source, p.name AS scorer,"
         "       m.home, m.away, m.date"
         " FROM goals g"
-        " JOIN players p ON p.id = g.player_id"
+        " JOIN players p ON p.id = g.player_id AND p.ours = 1"
         " JOIN matches m ON m.id = g.match_id"
         " WHERE m.season = ?"
         "   AND NOT EXISTS (SELECT 1 FROM assists a WHERE a.goal_id = g.id)"
@@ -757,7 +807,7 @@ def match_squad(conn: sqlite3.Connection, match_id: int) -> list[str]:
         row["name"]
         for row in conn.execute(
             "SELECT DISTINCT p.name FROM appearances a"
-            " JOIN players p ON p.id = a.player_id"
+            " JOIN players p ON p.id = a.player_id AND p.ours = 1"
             " WHERE a.match_id = ? ORDER BY p.name",
             (match_id,),
         )
@@ -769,7 +819,7 @@ def match_appearances(conn: sqlite3.Connection, match_id: int) -> list[sqlite3.R
     source that carries minutes, the same rule player_summary counts by."""
     return conn.execute(
         "SELECT p.name, a.started, a.minute_in, a.minute_out FROM appearances a"
-        " JOIN players p ON p.id = a.player_id"
+        " JOIN players p ON p.id = a.player_id AND p.ours = 1"
         " WHERE a.match_id = ? AND a.source = 'laczynaspilka'"
         " ORDER BY a.started DESC, COALESCE(a.minute_in, 0), p.name",
         (match_id,),
@@ -786,7 +836,7 @@ def match_cards(conn: sqlite3.Connection, match_id: int) -> list[sqlite3.Row]:
     """
     return conn.execute(
         "SELECT DISTINCT p.name, c.color, c.minute FROM cards c"
-        " JOIN players p ON p.id = c.player_id"
+        " JOIN players p ON p.id = c.player_id AND p.ours = 1"
         " WHERE c.match_id = ? ORDER BY COALESCE(c.minute, 999), p.name",
         (match_id,),
     ).fetchall()

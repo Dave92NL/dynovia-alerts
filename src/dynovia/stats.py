@@ -17,7 +17,7 @@ from dynovia.models import normalize_player
 def goals_by_player(conn: sqlite3.Connection, season: str) -> list[tuple[str, int]]:
     rows = conn.execute(
         "SELECT g.match_id, g.source, p.name FROM goals g"
-        " JOIN players p ON p.id = g.player_id"
+        " JOIN players p ON p.id = g.player_id AND p.ours = 1"
         " JOIN matches m ON m.id = g.match_id WHERE m.season = ?",
         (season,),
     ).fetchall()
@@ -43,7 +43,7 @@ def _rank(source: str) -> int:
 def appearances_by_player(conn: sqlite3.Connection, season: str) -> list[tuple[str, int]]:
     rows = conn.execute(
         "SELECT p.name, COUNT(DISTINCT a.match_id) AS played FROM appearances a"
-        " JOIN players p ON p.id = a.player_id"
+        " JOIN players p ON p.id = a.player_id AND p.ours = 1"
         " JOIN matches m ON m.id = a.match_id WHERE m.season = ?"
         " GROUP BY p.id ORDER BY played DESC, p.name",
         (season,),
@@ -97,7 +97,7 @@ def assists_by_player(conn: sqlite3.Connection, season: str) -> list[tuple[str, 
     not a statistic."""
     rows = conn.execute(
         "SELECT p.name, COUNT(*) AS n FROM assists a"
-        " JOIN players p ON p.id = a.player_id"
+        " JOIN players p ON p.id = a.player_id AND p.ours = 1"
         " JOIN goals g ON g.id = a.goal_id"
         " JOIN matches m ON m.id = g.match_id"
         " WHERE m.season = ? AND a.confirmed = 1"

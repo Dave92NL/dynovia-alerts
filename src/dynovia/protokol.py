@@ -158,19 +158,31 @@ def parse_protocol(html: str) -> Protocol:
 
 
 def our_squad(protocol: Protocol) -> dict[str, bool]:
-    """{player: started} for Dynovia only. The protocol lists both teams, and
-    the opponents are not in our roster - importing them would raise a question
-    about every single one."""
+    """{player: started} for Dynovia."""
     for team, squad in protocol.squads.items():
         if "dynovia" in normalize_team(team):
             return dict(squad)
     return {}
 
 
+def their_squad(protocol: Protocol) -> dict[str, bool]:
+    """The same for whoever we played.
+
+    These names are never resolved against kadra.txt - doing so would raise a
+    question about every single one - so they are stored as written and kept
+    out of every statistic by players.ours.
+    """
+    for team, squad in protocol.squads.items():
+        if "dynovia" not in normalize_team(team):
+            return dict(squad)
+    return {}
+
+
 def to_records(
-    protocol: Protocol, match: MatchKey
+    protocol: Protocol, match: MatchKey, squad: dict[str, bool]
 ) -> tuple[list[AppearanceData], list[GoalData], list[CardData]]:
-    squad = our_squad(protocol)
+    """One team's half of the protocol. Called once per side: the events are
+    shared between both, and the squad is what says which are whose."""
     on = {name: minute for minute, name, kind in protocol.events if kind == "on"}
     off = {name: minute for minute, name, kind in protocol.events if kind == "off"}
 
@@ -278,7 +290,7 @@ def import_html(
         )
         return Imported(None, home=protocol.home, away=protocol.away)
 
-    appearances, goals, cards = to_records(protocol, match)
+    appearances, goals, cards = to_records(protocol, match, our_squad(protocol))
     log.info(
         "protokol %s: %d wystepow, %d bramek, %d kartek",
         label,
@@ -291,6 +303,15 @@ def import_html(
         + db.store_goals(conn, goals, SOURCE, registry)
         + db.store_cards(conn, cards, SOURCE, registry)
     )
+
+    # The other half, stored with registry=None: written down as the protocol
+    # spells them, never matched against kadra.txt, never asked about. They
+    # exist so a match screen can show both teams, and players.ours keeps them
+    # out of everything else.
+    theirs = to_records(protocol, match, their_squad(protocol))
+    for records, store in zip(theirs, (db.store_lineups, db.store_goals, db.store_cards)):
+        store(conn, records, SOURCE, None)
+    log.info("protokol %s: %d wystepow przeciwnika", label, len(theirs[0]))
     return Imported(
         match,
         conflicts,

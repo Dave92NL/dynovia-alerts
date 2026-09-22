@@ -29,7 +29,7 @@ def scorers_by_match(conn, season: str) -> dict[int, list[dict]]:
     same rule the statistics use, so the two can never tell different stories."""
     rows = conn.execute(
         "SELECT g.match_id, g.source, g.minute, p.name FROM goals g"
-        " JOIN players p ON p.id = g.player_id"
+        " JOIN players p ON p.id = g.player_id AND p.ours = 1"
         " JOIN matches m ON m.id = g.match_id WHERE m.season = ?",
         (season,),
     ).fetchall()

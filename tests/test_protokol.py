@@ -57,10 +57,11 @@ def test_events_are_told_apart_by_icon_colour(protocol):
     assert kinds.count("on") == kinds.count("off") == 7
 
 
-def test_only_our_players_are_recorded(protocol):
-    # The timeline mixes both teams: Grom's Kuźniar scored and two of their
-    # players were booked.
-    _, goals, cards = protokol.to_records(protocol, GROM)
+def test_the_squad_decides_whose_events_are_whose(protocol):
+    # The timeline is shared: Grom's Kuźniar scored and two of their players
+    # were booked in the same list as ours. The squad passed in is the only
+    # thing that separates them.
+    _, goals, cards = protokol.to_records(protocol, GROM, protokol.our_squad(protocol))
     assert [g.player for g in goals] == ["Arkadiusz Kłoda", "Filip Goleś", "Filip Goleś"]
     assert sorted(c.player for c in cards) == [
         "Krystian Skubisz",
@@ -68,9 +69,19 @@ def test_only_our_players_are_recorded(protocol):
         "Sylwester Paszko",
     ]
 
+    _, theirs, their_cards = protokol.to_records(
+        protocol, GROM, protokol.their_squad(protocol)
+    )
+    assert [g.player for g in theirs] == ["Maciej Kuźniar"]
+    # Four of the five bookings belong to a squad. The fifth, Jan Kłusek in the
+    # 55th, is in neither: the protocol books the bench staff too, and they are
+    # listed under Sztab rather than in a squad. Filtering by squad drops him,
+    # which is right - he did not play.
+    assert [c.player for c in their_cards] == ["Dawid Kądzielawa"]
+
 
 def test_playing_time_comes_from_the_substitutions(protocol):
-    appearances, _, _ = protokol.to_records(protocol, GROM)
+    appearances, _, _ = protokol.to_records(protocol, GROM, protokol.our_squad(protocol))
     minutes = {a.player: (a.minute_out or 90) - (a.minute_in or 0) for a in appearances}
     assert minutes["Filip Goleś"] == 77  # started, off in the 77th
     assert minutes["Arkadiusz Kłoda"] == 30  # on in the 60th
@@ -78,7 +89,7 @@ def test_playing_time_comes_from_the_substitutions(protocol):
 
 
 def test_an_unused_substitute_did_not_play(protocol):
-    appearances, _, _ = protokol.to_records(protocol, GROM)
+    appearances, _, _ = protokol.to_records(protocol, GROM, protokol.our_squad(protocol))
     assert len(appearances) == 15  # 11 + 4 who came on, of 18 named
     assert "Sebastian Urbaniak" not in {a.player for a in appearances}
 
@@ -94,12 +105,34 @@ def test_the_reverse_fixture_is_not_picked(conn, protocol):
     assert found[1] == "dynovia dynow"
 
 
+def ours_and_theirs(conn) -> tuple[int, int]:
+    row = conn.execute(
+        "SELECT SUM(p.ours) AS ours, SUM(1 - p.ours) AS theirs FROM appearances a"
+        " JOIN players p ON p.id = a.player_id"
+    ).fetchone()
+    return row["ours"] or 0, row["theirs"] or 0
+
+
 def test_importing_the_same_file_twice_changes_nothing(conn):
     protokol.import_file(conn, FIXTURE, REGISTRY)
-    before = conn.execute("SELECT COUNT(*) c FROM appearances").fetchone()["c"]
+    before = ours_and_theirs(conn)
     protokol.import_file(conn, FIXTURE, REGISTRY)
-    after = conn.execute("SELECT COUNT(*) c FROM appearances").fetchone()["c"]
-    assert before == after == 15
+    assert ours_and_theirs(conn) == before == (15, 14)
+
+
+def test_the_opposition_is_stored_but_never_counted_as_ours(conn):
+    # Their names are not in kadra.txt and resolving them would raise a
+    # question about every single one, so they are written down as-is - and
+    # every statistic in the app has to keep ignoring them.
+    protokol.import_file(conn, FIXTURE, REGISTRY)
+    assert ours_and_theirs(conn) == (15, 14)
+
+    from dynovia import stats
+
+    played = dict(stats.appearances_by_player(conn, "2026/27"))
+    assert "Maciej Kuźniar" not in played
+    assert "Filip Goleś" in played
+    assert dict(stats.goals_by_player(conn, "2026/27")).get("Maciej Kuźniar") is None
 
 
 def test_full_names_in_the_protocol_need_no_questions(conn):

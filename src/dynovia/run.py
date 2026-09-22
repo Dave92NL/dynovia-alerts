@@ -15,33 +15,47 @@ import sys
 
 from dynovia import bot, db, differ, export, models, players, protokol
 from dynovia.config import PROTOCOLS_DIR, ROSTER_PATH, SCHEDULE_PATH
-from dynovia.differ import WARSAW, kickoff
+from dynovia.differ import AFTERMATH, WARSAW, kickoff
 from dynovia.notify import telegram, webpush
 from dynovia.scrapers import SCRAPERS
 from dynovia.snapshot import load_fixtures
 
 log = logging.getLogger("dynovia.run")
 
-MATCH_WINDOW = dt.timedelta(hours=3)  # whistle to final whistle, generously
-AFTERMATH = dt.timedelta(hours=72)  # lineups and protocols trickle in this long
+IDLE = dt.timedelta(days=1)
+"""Polling interval with no recent match to justify anything faster."""
+
+POLLING = (
+    (dt.timedelta(hours=6), dt.timedelta(minutes=10)),
+    (dt.timedelta(hours=24), dt.timedelta(minutes=30)),
+    (AFTERMATH, dt.timedelta(hours=2)),
+)
+"""How long after kickoff, and how often to poll inside that.
+
+Six hours rather than three for the fast band because that is when these sites
+actually publish: a 14:00 kickoff whistles around 15:50 and the result lands on
+regiowyniki or podkarpacielive somewhere between 16:00 and 20:00. A three-hour
+window closed at 17:00 and left most of that to the slow band.
+
+Deliberately not faster, and deliberately zero outside the bands: these are
+small sites run by people after work, and a */10 cron with no schedule at all
+would hit each of them 144 times a day to learn nothing.
+"""
 
 
 def poll_interval(matches, now: dt.datetime) -> dt.timedelta:
-    """How often this source deserves to be polled right now.
-
-    The schedule from the plan: every 10 minutes while a match is on, every two
-    hours for three days afterwards, otherwise once a day. Without it a */10
-    cron would hit these small community-run sites 144 times a day for nothing.
-    """
-    interval = dt.timedelta(days=1)
+    """How often this source deserves to be polled right now."""
+    interval = IDLE
     for match in matches:
         start = kickoff(match)
         if start is None:
             continue
-        if start <= now <= start + MATCH_WINDOW:
-            return dt.timedelta(minutes=10)  # nothing beats a live match
-        if start < now <= start + AFTERMATH:
-            interval = min(interval, dt.timedelta(hours=2))
+        for since, every in POLLING:
+            # min across every match rather than returning on the first hit:
+            # two matches in one weekend must not depend on list order.
+            if start <= now <= start + since:
+                interval = min(interval, every)
+                break
     return interval
 
 
@@ -49,7 +63,7 @@ def is_due(last: dt.datetime | None, matches, now: dt.datetime) -> bool:
     if last is None:
         return True
     interval = poll_interval(matches, now)
-    if interval < dt.timedelta(days=1):
+    if interval < IDLE:
         return now - last >= interval
     # The daily refresh is anchored at 06:00 Warsaw time so the "tomorrow"
     # reminders are built from data fetched that morning. Actions runs on UTC,

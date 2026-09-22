@@ -108,15 +108,27 @@ def test_the_day_before_is_called_tomorrow_only_when_it_is():
 
 def test_polling_speeds_up_during_and_after_a_match():
     played = [match()]
-    assert run.poll_interval(played, KICKOFF + dt.timedelta(hours=1)) == dt.timedelta(
-        minutes=10
-    )
-    assert run.poll_interval(played, KICKOFF + dt.timedelta(hours=24)) == dt.timedelta(
-        hours=2
-    )
-    assert run.poll_interval(played, KICKOFF + dt.timedelta(days=5)) == dt.timedelta(
-        days=1
-    )
+
+    def after(**offset) -> dt.timedelta:
+        return run.poll_interval(played, KICKOFF + dt.timedelta(**offset))
+
+    assert after(hours=1) == dt.timedelta(minutes=10)
+    # The old window closed here, which is the point of the change: a 16:00
+    # kickoff whistles at 17:50 and the result is published after that.
+    assert after(hours=4) == dt.timedelta(minutes=10)
+    assert after(hours=6) == dt.timedelta(minutes=10)
+    assert after(hours=7) == dt.timedelta(minutes=30)
+    assert after(hours=24) == dt.timedelta(minutes=30)
+    assert after(hours=25) == dt.timedelta(hours=2)
+    assert after(days=5) == run.IDLE
+
+
+def test_two_matches_in_a_weekend_do_not_depend_on_list_order():
+    # The nearer match wins whichever way round the list comes.
+    sunday = match(date=dt.date(2026, 10, 4), away="Sawa Sonina")
+    now = KICKOFF + dt.timedelta(hours=26)  # slow for Saturday, fast for Sunday
+    assert run.poll_interval([match(), sunday], now) == dt.timedelta(minutes=10)
+    assert run.poll_interval([sunday, match()], now) == dt.timedelta(minutes=10)
 
 
 def test_the_daily_refresh_waits_for_six_in_the_morning():

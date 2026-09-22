@@ -23,6 +23,10 @@ log = logging.getLogger(__name__)
 WEB_DATA = ROOT / "web" / "data"
 US = normalize_team(CLUB)
 
+PROTOCOL = "laczynaspilka"
+"""The only source that carries minutes - the same rule player_summary counts
+by. A lineup from anywhere else is a list of names and says so."""
+
 
 def scorers_by_match(conn, season: str) -> dict[int, list[dict]]:
     """Goals per match from the most trusted source that saw the match - the
@@ -52,8 +56,84 @@ def scorers_by_match(conn, season: str) -> dict[int, list[dict]]:
     return out
 
 
+def _details_by_match(conn, season: str) -> dict[int, dict]:
+    """Who played and what happened to them, per match and per side.
+
+    `ours` carries the side rather than a team name: the appearances table has
+    no team column and needs none, because a player belongs to Dynovia or to
+    whoever we were playing, and the match says which end that is.
+
+    Lineups come from whichever source has them. Minutes only ever come from
+    the PZPN protocol, so a match imported from futbolowo lists who played and
+    leaves the minutes empty rather than inventing them.
+    """
+    details: dict[int, dict] = {}
+    rows = conn.execute(
+        "SELECT a.match_id, p.name, p.ours, a.started, a.minute_in, a.minute_out,"
+        "       a.source FROM appearances a"
+        " JOIN players p ON p.id = a.player_id"
+        " JOIN matches m ON m.id = a.match_id WHERE m.season = ?"
+        " ORDER BY p.ours DESC, a.started DESC, COALESCE(a.minute_in, 0), p.name",
+        (season,),
+    ).fetchall()
+    for row in rows:
+        side = details.setdefault(row["match_id"], {"lineup": [], "cards": [], "theirGoals": []})
+        entry = {
+            "name": row["name"],
+            "ours": bool(row["ours"]),
+            "started": bool(row["started"]),
+            "minuteIn": row["minute_in"],
+            "minuteOut": row["minute_out"],
+            "minutes": row["source"] == PROTOCOL,
+        }
+        # A player can be listed by two sources at once; the protocol wins
+        # because it is the only one carrying minutes.
+        same = next(
+            (e for e in side["lineup"] if e["name"] == row["name"]), None
+        )
+        if same is None:
+            side["lineup"].append(entry)
+        elif entry["minutes"] and not same["minutes"]:
+            side["lineup"][side["lineup"].index(same)] = entry
+
+    for row in conn.execute(
+        "SELECT DISTINCT c.match_id, p.name, p.ours, c.color, c.minute FROM cards c"
+        " JOIN players p ON p.id = c.player_id"
+        " JOIN matches m ON m.id = c.match_id WHERE m.season = ?"
+        " ORDER BY COALESCE(c.minute, 999), p.name",
+        (season,),
+    ):
+        side = details.setdefault(row["match_id"], {"lineup": [], "cards": [], "theirGoals": []})
+        side["cards"].append(
+            {
+                "name": row["name"],
+                "ours": bool(row["ours"]),
+                "color": row["color"],
+                "minute": row["minute"],
+            }
+        )
+
+    # Only theirs. Ours already come through scorers_by_match, which picks one
+    # source for the whole match; taking them from here as well would list a
+    # goal twice whenever two sources saw it. Nobody but the protocol records
+    # the opposition at all, so there is nothing to choose between.
+    for row in conn.execute(
+        "SELECT DISTINCT g.match_id, p.name, g.minute FROM goals g"
+        " JOIN players p ON p.id = g.player_id AND p.ours = 0"
+        " JOIN matches m ON m.id = g.match_id WHERE m.season = ?"
+        " ORDER BY COALESCE(g.minute, 999), p.name",
+        (season,),
+    ):
+        side = details.setdefault(row["match_id"], {"lineup": [], "cards": [], "theirGoals": []})
+        side["theirGoals"].append(
+            {"player": row["name"], "minute": row["minute"]}
+        )
+    return details
+
+
 def build(conn, season: str) -> dict[str, object]:
     scorers = scorers_by_match(conn, season)
+    details = _details_by_match(conn, season)
     ids = db.match_ids(conn)
 
     matches = []
@@ -77,6 +157,7 @@ def build(conn, season: str) -> dict[str, object]:
                 "status": match.status,
                 "atHome": normalize_team(match.home) == US,
                 "scorers": scorers.get(match_id, []),
+                **details.get(match_id, {"lineup": [], "cards": [], "theirGoals": []}),
             }
         )
 

@@ -140,6 +140,28 @@
     font: inherit; font-weight: 600; cursor: pointer;
   }
   button.push[disabled] { background: var(--line); color: var(--muted); }
+  .match[role="button"] { cursor: pointer; }
+  .match .chevron { color: var(--muted); font-size: 20px; line-height: 1; flex: 0 0 auto; }
+  button.back {
+    background: none; border: 0; color: var(--blue); font: inherit;
+    font-weight: 650; padding: 4px 2px 10px; cursor: pointer;
+  }
+  .scoreline { font-size: 17px; font-weight: 700; margin: 8px 0 4px; line-height: 1.3; }
+  .scoreline b { font-size: 21px; font-variant-numeric: tabular-nums; }
+  .timeline { padding: 6px 16px; }
+  .event { display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 14px; }
+  .event + .event { border-top: 1px solid var(--line); }
+  .event b { width: 34px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .event .mark { width: 22px; }
+  /* Opponents stay legible but recede: this is Dynovia's app. */
+  .event.theirs { color: var(--muted); }
+  .squads { padding: 4px 16px 14px; }
+  .squad h3 { font-size: 14px; margin: 14px 0 6px; }
+  .squad ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+  .squad li { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .squad li:last-child { border-bottom: 0; }
+  .squad .min { color: var(--muted); font-size: 11px; }
+  .squad .tag { display: block; margin-top: 10px; }
   .help p { margin: 8px 0; }
   .help ol { margin: 8px 0; padding-left: 20px; }
   .help li { margin-bottom: 6px; }

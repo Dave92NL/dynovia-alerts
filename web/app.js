@@ -94,7 +94,12 @@ function tick(at) {
 }
 
 function renderResults() {
-  const played = state.matches.filter((m) => m.status === "finished").reverse();
+  // The index into state.matches travels with the row: the list is filtered
+  // and reversed, so its own position means nothing to anyone else.
+  const played = state.matches
+    .map((m, index) => ({ m, index }))
+    .filter(({ m }) => m.status === "finished")
+    .reverse();
   const box = $("results");
   box.innerHTML = "";
   if (!played.length) {
@@ -102,12 +107,12 @@ function renderResults() {
     return;
   }
   const card = el('<div class="card results-card"></div>');
-  for (const m of played) {
+  for (const { m, index } of played) {
     const ours = m.atHome ? m.homeScore : m.awayScore;
     const theirs = m.atHome ? m.awayScore : m.homeScore;
     const result = ours > theirs ? "win" : ours < theirs ? "loss" : "draw";
     card.append(
-      el(`<div class="match">
+      el(`<div class="match" role="button" tabindex="0" data-match="${index}">
         <div class="date">${esc(shortDate(m.date))}</div>
         <div class="teams">${
           m.atHome
@@ -115,6 +120,7 @@ function renderResults() {
             : `${esc(m.home)} – <em>${esc(m.away)}</em>`
         }</div>
         <div class="score ${result}">${m.homeScore}–${m.awayScore}</div>
+        <div class="chevron">›</div>
       </div>`)
     );
     if (m.scorers.length) {
@@ -124,7 +130,109 @@ function renderResults() {
       card.append(el(`<div class="goals">⚽ ${list}</div>`));
     }
   }
+  card.addEventListener("click", (event) => {
+    const row = event.target.closest("[data-match]");
+    if (row) openMatch(Number(row.dataset.match));
+  });
   box.append(card);
+}
+
+/* --- jeden mecz ----------------------------------------------------------- */
+
+/* Pushed onto history so the iOS back swipe leaves the match rather than the
+   app. Without it the gesture closes a standalone PWA outright. */
+function openMatch(index) {
+  history.pushState({ match: index }, "");
+  renderMatch(index);
+}
+
+window.addEventListener("popstate", () => {
+  if (!$("results").hidden) renderResults();
+});
+
+const CARD_MARK = { yellow: "🟨", second_yellow: "🟨🟥", red: "🟥" };
+const FULL_TIME = 90;
+
+function timeline(match) {
+  /* One list, both teams, in the order it happened. Ours and theirs come from
+     different places on purpose: our goals are picked from a single trusted
+     source, theirs exist only where a protocol was imported. */
+  const events = [
+    ...match.scorers.map((g) => ({ minute: g.minute, mark: "⚽", who: g.player, ours: true })),
+    ...match.theirGoals.map((g) => ({ minute: g.minute, mark: "⚽", who: g.player, ours: false })),
+    ...match.cards.map((c) => ({
+      minute: c.minute, mark: CARD_MARK[c.color] || "🟨", who: c.name, ours: c.ours,
+    })),
+  ];
+  for (const p of match.lineup) {
+    if (p.minuteIn) events.push({ minute: p.minuteIn, mark: "⬆️", who: p.name, ours: p.ours });
+    if (p.minuteOut && p.minuteOut < FULL_TIME) {
+      events.push({ minute: p.minuteOut, mark: "⬇️", who: p.name, ours: p.ours });
+    }
+  }
+  return events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
+}
+
+function squadBlock(match, ours) {
+  const side = match.lineup.filter((p) => p.ours === ours);
+  const team = ours === match.atHome ? match.home : match.away;
+  if (!side.length) return "";
+  const line = (p) =>
+    `<li>${esc(p.name)}${
+      p.minutes && !p.started ? ` <span class="min">od ${p.minuteIn}'</span>` : ""
+    }${
+      p.minutes && p.minuteOut < FULL_TIME ? ` <span class="min">do ${p.minuteOut}'</span>` : ""
+    }</li>`;
+  const starters = side.filter((p) => p.started);
+  const subs = side.filter((p) => !p.started);
+  return `<div class="squad">
+    <h3>${esc(team)}</h3>
+    <ul>${starters.map(line).join("")}</ul>
+    ${subs.length ? `<p class="tag">Weszli z ławki</p><ul>${subs.map(line).join("")}</ul>` : ""}
+  </div>`;
+}
+
+function renderMatch(index) {
+  const m = state.matches[index];
+  const box = $("results");
+  const events = timeline(m);
+  const when = `${DAY[kickoff(m).getDay()]}, ${shortDate(m.date)}`;
+
+  box.innerHTML = `
+    <button class="back" id="backToResults">‹ Wyniki</button>
+    <div class="card match-hero">
+      <div class="hero-top">
+        <span class="tag">${m.round ? "kolejka " + m.round + " · " : ""}${esc(m.competition)}</span>
+        <div class="scoreline">${esc(m.home)} <b>${m.homeScore}–${m.awayScore}</b> ${esc(m.away)}</div>
+        <div class="when">${when}</div>
+      </div>
+    </div>
+    ${
+      events.length
+        ? `<div class="section-heading"><h2>Przebieg</h2></div>
+           <div class="card timeline">${events
+             .map(
+               (e) => `<div class="event${e.ours ? "" : " theirs"}">
+                 <b>${e.minute ? e.minute + "'" : "–"}</b>
+                 <span class="mark">${e.mark}</span>
+                 <span>${esc(e.who)}</span>
+               </div>`
+             )
+             .join("")}</div>`
+        : ""
+    }
+    ${
+      m.lineup.length
+        ? `<div class="section-heading"><h2>Składy</h2></div>
+           <div class="card squads">${squadBlock(m, true)}${squadBlock(m, false)}</div>
+           ${
+             m.lineup.some((p) => p.minutes)
+               ? ""
+               : '<footer>Bez minut — te są tylko w protokole PZPN.</footer>'
+           }`
+        : '<div class="card empty">Składów nie ma.<br>Wyślij protokół PZPN — jak, sprawdzisz w Źródłach.</div>'
+    }`;
+  $("backToResults").addEventListener("click", () => history.back());
 }
 
 function renderStats() {

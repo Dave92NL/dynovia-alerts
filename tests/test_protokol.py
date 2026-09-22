@@ -190,3 +190,46 @@ def test_pzpn_outranks_the_scrapers_on_a_date(conn):
         dt.datetime.now(dt.UTC),
     )
     assert store.stored_matches(conn)[key].date == dt.date(2026, 10, 11)
+
+
+# --- co z tego dociera do aplikacji ---------------------------------------
+
+
+def test_both_squads_reach_the_app_with_their_side_marked(conn):
+    from dynovia import export
+
+    protokol.import_file(conn, FIXTURE, REGISTRY)
+    match = [
+        m for m in export.build(conn, "2026/27")["matches.json"]
+        if m["date"] == "2026-09-19"
+    ][0]
+
+    ours = [p for p in match["lineup"] if p["ours"]]
+    theirs = [p for p in match["lineup"] if not p["ours"]]
+    assert (len(ours), len(theirs)) == (15, 14)
+    # No team column anywhere: the side is `ours`, and the match says which
+    # end of the fixture that is.
+    assert {p["name"] for p in theirs} >= {"Maciej Kuźniar", "Dawid Kądzielawa"}
+
+    # Their substitutions carry minutes too, or the screen cannot say when
+    # anything happened.
+    on = {p["name"]: p["minuteIn"] for p in theirs if p["minuteIn"]}
+    assert on["Grzegorz Bekierski"] == 80
+
+    assert [c["ours"] for c in match["cards"]] == [False, True, True, True]
+    # The goal that makes it 3-1 belongs to them and comes from nowhere else.
+    assert match["theirGoals"] == [{"player": "Maciej Kuźniar", "minute": 69}]
+
+
+def test_our_goals_are_never_counted_from_two_sources_at_once(conn):
+    from dynovia import export
+
+    protokol.import_file(conn, FIXTURE, REGISTRY)
+    match = [
+        m for m in export.build(conn, "2026/27")["matches.json"]
+        if m["date"] == "2026-09-19"
+    ][0]
+    # Three goals, not six: scorers_by_match picks one source for the match,
+    # and theirGoals deliberately holds only the opposition.
+    assert len(match["scorers"]) == 3
+    assert all(g["player"] != "Maciej Kuźniar" for g in match["scorers"])

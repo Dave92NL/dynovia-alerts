@@ -24,3 +24,15 @@ test("the sources tab explains how to send a protocol from a phone", () => {
   assert.match(app, /Kompletna witryna/);
   assert.match(app, /Opcje/);
 });
+
+test("a result opens the match behind it", () => {
+  // The row carries its index into state.matches: the list is filtered and
+  // reversed, so its own position means nothing to renderMatch.
+  assert.match(app, /data-match=/);
+  assert.match(app, /function renderMatch/);
+  // Both sides in one timeline, theirs from the protocol only.
+  assert.match(app, /theirGoals/);
+  // pushState, so the iOS back swipe leaves the match and not the whole app.
+  assert.match(app, /history\.pushState/);
+  assert.match(html, /\.event\.theirs/);
+});

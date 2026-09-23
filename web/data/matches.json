@@ -263,6 +263,7 @@
     "started": false
    }
   ],
+  "ownGoals": [],
   "round": 1,
   "scorers": [
    {
@@ -571,6 +572,7 @@
     "started": false
    }
   ],
+  "ownGoals": [],
   "round": 2,
   "scorers": [
    {
@@ -902,6 +904,7 @@
     "started": false
    }
   ],
+  "ownGoals": [],
   "round": 3,
   "scorers": [
    {
@@ -1178,6 +1181,7 @@
     "started": true
    }
   ],
+  "ownGoals": [],
   "round": 4,
   "scorers": [
    {
@@ -1454,6 +1458,7 @@
     "started": false
    }
   ],
+  "ownGoals": [],
   "round": 5,
   "scorers": [
    {
@@ -1758,6 +1763,7 @@
     "started": false
    }
   ],
+  "ownGoals": [],
   "round": 6,
   "scorers": [
    {
@@ -1792,6 +1798,7 @@
   "home": "Astra Medynia Głogowska",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 7,
   "scorers": [],
   "status": "scheduled",
@@ -1808,6 +1815,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 8,
   "scorers": [],
   "status": "scheduled",
@@ -1824,6 +1832,7 @@
   "home": "Stal II Łańcut",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 9,
   "scorers": [],
   "status": "scheduled",
@@ -1840,6 +1849,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 10,
   "scorers": [],
   "status": "scheduled",
@@ -1856,6 +1866,7 @@
   "home": "Sawa Sonina",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 11,
   "scorers": [],
   "status": "scheduled",
@@ -1872,6 +1883,7 @@
   "home": "Jawor Krzemienica",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 12,
   "scorers": [],
   "status": "scheduled",
@@ -1888,6 +1900,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 13,
   "scorers": [],
   "status": "scheduled",
@@ -1904,6 +1917,7 @@
   "home": "Iskra Jawornik Polski",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 14,
   "scorers": [],
   "status": "scheduled",
@@ -1920,6 +1934,7 @@
   "home": "KS Dąbrówki",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 16,
   "scorers": [],
   "status": "scheduled",
@@ -1936,6 +1951,7 @@
   "home": "Polonia Hyżne",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 17,
   "scorers": [],
   "status": "scheduled",
@@ -1952,6 +1968,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 18,
   "scorers": [],
   "status": "scheduled",
@@ -1968,6 +1985,7 @@
   "home": "Plantator Nienadówka",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 19,
   "scorers": [],
   "status": "scheduled",
@@ -1984,6 +2002,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 20,
   "scorers": [],
   "status": "scheduled",
@@ -2000,6 +2019,7 @@
   "home": "Grom Handzlówka",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 21,
   "scorers": [],
   "status": "scheduled",
@@ -2016,6 +2036,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 22,
   "scorers": [],
   "status": "scheduled",
@@ -2032,6 +2053,7 @@
   "home": "Crasnovia Krasne",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 23,
   "scorers": [],
   "status": "scheduled",
@@ -2048,6 +2070,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 24,
   "scorers": [],
   "status": "scheduled",
@@ -2064,6 +2087,7 @@
   "home": "KS Pawłokoma",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 25,
   "scorers": [],
   "status": "scheduled",
@@ -2080,6 +2104,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 26,
   "scorers": [],
   "status": "scheduled",
@@ -2096,6 +2121,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 27,
   "scorers": [],
   "status": "scheduled",
@@ -2112,6 +2138,7 @@
   "home": "Stobierna-Krzywe Stobierna",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 28,
   "scorers": [],
   "status": "scheduled",
@@ -2128,6 +2155,7 @@
   "home": "Dynovia Dynów",
   "homeScore": null,
   "lineup": [],
+  "ownGoals": [],
   "round": 29,
   "scorers": [],
   "status": "scheduled",

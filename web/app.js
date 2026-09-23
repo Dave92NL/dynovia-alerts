@@ -150,34 +150,133 @@ window.addEventListener("popstate", () => {
   if (!$("results").hidden) renderResults();
 });
 
-const CARD_MARK = { yellow: "🟨", second_yellow: "🟨🟥", red: "🟥" };
+const CARD_CLASS = { yellow: "y", second_yellow: "yr", red: "r" };
 const FULL_TIME = 90;
 
-function timeline(match) {
-  /* One list, both teams, in the order it happened. Ours and theirs come from
-     different places on purpose: our goals are picked from a single trusted
-     source, theirs exist only where a protocol was imported. */
-  const events = [
-    ...match.scorers.map((g) => ({ minute: g.minute, mark: "⚽", who: g.player, ours: true })),
-    ...match.theirGoals.map((g) => ({ minute: g.minute, mark: "⚽", who: g.player, ours: false })),
-    // Counted for one team, kicked by the other. Shown on the side it counted
-    // for and named after whoever put it in, with the red ball football has
-    // used for this for ever - otherwise it reads as a goal by a player who
-    // plays for the other lot.
-    ...match.ownGoals.map((g) => ({
-      minute: g.minute, mark: "🔴", who: g.player, ours: g.ours,
-    })),
-    ...match.cards.map((c) => ({
-      minute: c.minute, mark: CARD_MARK[c.color] || "🟨", who: c.name, ours: c.ours,
-    })),
+function teamOf(match, ours) {
+  return ours === match.atHome ? match.home : match.away;
+}
+
+/* A long club name is a club plus a town and the chip holds one line, so
+   whatever fits stays whole and whatever does not keeps the club and drops
+   the town: "Grodziszczanka Grodzisko Dolne" is Grodziszczanka. */
+function shortTeam(name) {
+  return name.length <= 16 ? name : name.split(" ")[0];
+}
+
+/* Goals as home/away rather than ours/theirs, because the running score is
+   written the way the scoreline is. An own goal already carries `ours`
+   meaning "counted for us", not "kicked by one of ours". */
+function goalList(match) {
+  const goals = [
+    ...match.scorers.map((g) => ({ ...g, ours: true, own: false })),
+    ...match.theirGoals.map((g) => ({ ...g, ours: false, own: false })),
+    ...match.ownGoals.map((g) => ({ ...g, own: true })),
   ];
+  // A goal with no minute cannot be placed in the sequence, so it sorts last
+  // instead of silently claiming the kick-off.
+  goals.sort((a, b) => (a.minute || Infinity) - (b.minute || Infinity));
+  let home = 0;
+  let away = 0;
+  for (const goal of goals) {
+    if (goal.ours === match.atHome) home += 1;
+    else away += 1;
+    goal.run = `${home}–${away}`;
+  }
+  // The running score is shown only when it lands on the final result. Goals
+  // come from whichever sources happen to carry them, so a match can be
+  // recorded with fewer than were scored - and half a tally is worse than
+  // none, because it reads as the real thing.
+  return { goals, exact: home === match.homeScore && away === match.awayScore };
+}
+
+function goalsBlock(match) {
+  const { goals, exact } = goalList(match);
+  if (!goals.length) return "";
+  return `<div class="goals-block">
+    <span class="tag">Gole</span>
+    ${goals
+      .map(
+        (g) => `<div class="goal${g.ours ? "" : " theirs"}">
+          <span class="min">${g.minute ? g.minute + "'" : "–"}</span>
+          <span class="ball">${g.own ? "🔴" : "⚽"}</span>
+          <span class="who">${esc(g.player)}${
+            g.own ? '<span class="og">samobój</span>' : ""
+          }</span>
+          ${exact ? `<span class="run">${g.run}</span>` : ""}
+        </div>`
+      )
+      .join("")}
+  </div>`;
+}
+
+function cardsBlock(match) {
+  if (!match.cards.length) return "";
+  const rows = [...match.cards].sort((a, b) => (a.minute || 0) - (b.minute || 0));
+  return `<div class="section-heading"><h2>Kartki</h2><span>${rows.length}</span></div>
+    <div class="card cards-list">${rows
+      .map(
+        (c) => `<div class="row${c.ours ? "" : " theirs"}">
+          <span class="min">${c.minute ? c.minute + "'" : "–"}</span>
+          <span class="chip-card ${CARD_CLASS[c.color] || "y"}"></span>
+          <span class="who">${esc(c.name)}</span>
+          <span class="team">${esc(shortTeam(teamOf(match, c.ours)))}</span>
+        </div>`
+      )
+      .join("")}</div>`;
+}
+
+/* One sequence per minute, not per player. The protocol records who went off
+   and who came on, never who replaced whom - against Grodziszczanka two of
+   each moved at 80' - so the block groups the minute and leaves the pairing
+   unstated rather than inventing it. */
+function subSequences(match, ours) {
+  const sentOff = new Set(
+    match.cards
+      .filter((c) => c.color === "red" || c.color === "second_yellow")
+      .map((c) => `${c.name}@${c.minute}`)
+  );
+  const byMinute = new Map();
+  const at = (minute) => {
+    if (!byMinute.has(minute)) byMinute.set(minute, { out: [], in: [] });
+    return byMinute.get(minute);
+  };
   for (const p of match.lineup) {
-    if (p.minuteIn) events.push({ minute: p.minuteIn, mark: "⬆️", who: p.name, ours: p.ours });
-    if (p.minuteOut && p.minuteOut < FULL_TIME) {
-      events.push({ minute: p.minuteOut, mark: "⬇️", who: p.name, ours: p.ours });
+    if (p.ours !== ours) continue;
+    if (p.minuteIn) at(p.minuteIn).in.push(p.name);
+    // Walking off on a red card is not a substitution, and the cards section
+    // already says why the side went down to ten.
+    if (
+      p.minuteOut &&
+      p.minuteOut < FULL_TIME &&
+      !sentOff.has(`${p.name}@${p.minuteOut}`)
+    ) {
+      at(p.minuteOut).out.push(p.name);
     }
   }
-  return events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
+  return [...byMinute.entries()].sort((a, b) => a[0] - b[0]);
+}
+
+function subsBlock(match, ours) {
+  const sequences = subSequences(match, ours);
+  if (!sequences.length) return "";
+  const swap = (name, dir) =>
+    `<div class="swap ${dir}"><span class="arrow ${dir}">${
+      dir === "out" ? "▼" : "▲"
+    }</span><span class="name">${esc(name)}</span></div>`;
+  return `<div class="card subs${ours ? "" : " theirs"}">
+    <h3>${esc(teamOf(match, ours))}</h3>
+    ${sequences
+      .map(
+        ([minute, s]) => `<div class="seq">
+          <span class="min">${minute}'</span>
+          <div class="pair">${s.out.map((n) => swap(n, "out")).join("")}${s.in
+            .map((n) => swap(n, "in"))
+            .join("")}</div>
+        </div>`
+      )
+      .join("")}
+  </div>`;
 }
 
 function squadBlock(match, ours) {
@@ -202,8 +301,9 @@ function squadBlock(match, ours) {
 function renderMatch(index) {
   const m = state.matches[index];
   const box = $("results");
-  const events = timeline(m);
   const when = `${DAY[kickoff(m).getDay()]}, ${shortDate(m.date)}`;
+  const changes = subsBlock(m, true) + subsBlock(m, false);
+  const changeCount = subSequences(m, true).length + subSequences(m, false).length;
 
   box.innerHTML = `
     <button class="back" id="backToResults">‹ Wyniki</button>
@@ -213,24 +313,17 @@ function renderMatch(index) {
         <div class="scoreline">${esc(m.home)} <b>${m.homeScore}–${m.awayScore}</b> ${esc(m.away)}</div>
         <div class="when">${when}</div>
       </div>
+      ${goalsBlock(m)}
     </div>
+    ${cardsBlock(m)}
     ${
-      events.length
-        ? `<div class="section-heading"><h2>Przebieg</h2></div>
-           <div class="card timeline">${events
-             .map(
-               (e) => `<div class="event${e.ours ? "" : " theirs"}">
-                 <b>${e.minute ? e.minute + "'" : "–"}</b>
-                 <span class="mark">${e.mark}</span>
-                 <span>${esc(e.who)}</span>
-               </div>`
-             )
-             .join("")}</div>`
+      changes
+        ? `<div class="section-heading"><h2>Zmiany</h2><span>${changeCount}</span></div>${changes}`
         : ""
     }
     ${
       m.lineup.length
-        ? `<div class="section-heading"><h2>Składy</h2></div>
+        ? `<div class="section-heading"><h2>Składy</h2><span>${m.lineup.length}</span></div>
            <div class="card squads">${squadBlock(m, true)}${squadBlock(m, false)}</div>
            ${
              m.lineup.some((p) => p.minutes)

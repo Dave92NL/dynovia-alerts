@@ -21,6 +21,14 @@
     --bg: #f3f6fa;
     --card: #ffffff;
     --success: #137353;
+    /* Strzałki zmian w kolorach samego protokołu PZPN - _icon_kind()
+       w protokol.py rozpoznaje wejście i zejście wyłącznie po tych
+       dwóch wartościach fill. */
+    --off: #F26C36;
+    --on: #8BF236;
+    --on-ink: #3f7a00;
+    --yellow: #F5C518;
+    --red: #D83A2E;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
@@ -68,8 +76,10 @@
     background: var(--card); border: 1px solid rgba(18,34,56,.05); border-radius: 20px; padding: 18px;
     box-shadow: 0 8px 26px rgba(24,48,79,.07); margin-bottom: 14px;
   }
-  .match-hero { overflow: hidden; padding: 0; text-align: center; }
-  .hero-top { padding: 18px 18px 16px; background: linear-gradient(135deg, #073b78, #0059ad); color: #fff; }
+  /* Wyśrodkowanie siedzi na nagłówku, nie na całej karcie: pod nagłówkiem
+     karty meczu leżą teraz gole, a te są listą i czytają się od lewej. */
+  .match-hero { overflow: hidden; padding: 0; }
+  .hero-top { padding: 18px 18px 16px; background: linear-gradient(135deg, #073b78, #0059ad); color: #fff; text-align: center; }
   .hero-top .tag { color: rgba(255,255,255,.76); }
   .next .opponent { font-size: 24px; line-height: 1.15; font-weight: 800; letter-spacing: -.55px; margin: 8px auto 5px; max-width: 290px; }
   .next .when { color: rgba(255,255,255,.82); font-size: 13px; }
@@ -79,6 +89,7 @@
   .countdown div {
     background: #f2f6fb; color: var(--blue-dark); border-radius: 12px;
     min-width: 68px; padding: 8px 5px; border: 1px solid #e4edf6;
+    text-align: center;
   }
   .countdown b { display: block; font-size: 24px; line-height: 1.1; }
   .countdown span { font-size: 10px; color: var(--muted); font-weight: 650; text-transform: uppercase; }
@@ -147,14 +158,81 @@
     font-weight: 650; padding: 4px 2px 10px; cursor: pointer;
   }
   .scoreline { font-size: 17px; font-weight: 700; margin: 8px 0 4px; line-height: 1.3; }
-  .scoreline b { font-size: 21px; font-variant-numeric: tabular-nums; }
-  .timeline { padding: 6px 16px; }
-  .event { display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 14px; }
-  .event + .event { border-top: 1px solid var(--line); }
-  .event b { width: 34px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-  .event .mark { width: 22px; }
-  /* Opponents stay legible but recede: this is Dynovia's app. */
-  .event.theirs { color: var(--muted); }
+  /* nowrap, bo przy dwoch dlugich nazwach wiersz lamal sie w srodku wyniku
+     i "1-6" zostawalo rozbite na dwie linie. */
+  .scoreline b { font-size: 21px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Gole siedzą w karcie wyniku, bo to one ten wynik tłumaczą. */
+  .goals-block { padding: 4px 16px 12px; }
+  .goals-block .tag { display: block; margin: 12px 0 2px; }
+  .goal { display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 14px; }
+  .goal + .goal { border-top: 1px solid var(--line); }
+  .goal .min {
+    width: 34px; flex: 0 0 auto; color: var(--muted);
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .goal .ball { width: 20px; flex: 0 0 auto; font-size: 14px; line-height: 1; }
+  .goal .who { flex: 1; min-width: 0; font-weight: 650; }
+  .goal .who .og {
+    font-weight: 600; font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .4px; margin-left: 5px;
+  }
+  /* Rywal czytelny, ale cofnięty: to jest aplikacja Dynovii. */
+  .goal.theirs .who { font-weight: 500; color: var(--muted); }
+  .goal .run {
+    flex: 0 0 auto; min-width: 42px; text-align: center;
+    padding: 3px 7px; border-radius: 7px; font-size: 12.5px; font-weight: 800;
+    font-variant-numeric: tabular-nums; background: #eef4fa; color: var(--blue-dark);
+  }
+  .goal.theirs .run { background: #f2f4f7; color: var(--muted); }
+
+  .cards-list { padding: 6px 16px; }
+  .row { display: flex; align-items: center; gap: 11px; padding: 10px 0; font-size: 14px; }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row .min {
+    width: 34px; flex: 0 0 auto; color: var(--muted);
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .row .who { flex: 1; min-width: 0; }
+  .row.theirs .who { color: var(--muted); }
+  .row .team {
+    flex: 0 0 auto; font-size: 10px; letter-spacing: .4px; text-transform: uppercase;
+    font-weight: 750; color: var(--muted); background: var(--bg);
+    padding: 3px 7px; border-radius: 6px;
+  }
+  /* Kartka rysowana, nie 🟨: emoji ma inny rozmiar i odcień na każdym
+     systemie, a kartka to dosłownie kolorowy prostokąt. */
+  .chip-card {
+    width: 13px; height: 17px; border-radius: 2.5px; flex: 0 0 auto;
+    box-shadow: 0 1px 2px rgba(18,34,56,.22);
+  }
+  .chip-card.y { background: var(--yellow); }
+  .chip-card.r { background: var(--red); }
+  .chip-card.yr { background: linear-gradient(135deg, var(--yellow) 0 48%, var(--red) 52% 100%); }
+
+  .subs { padding: 4px 16px 14px; }
+  .subs h3 { font-size: 14px; margin: 14px 0 8px; }
+  .subs h3:first-child { margin-top: 6px; }
+  /* Jedna sekwencja to jedna minuta, nie jeden zawodnik: protokół zapisuje,
+     kto zszedł i kto wszedł, ale nigdy kto kogo zmienił. */
+  .seq { display: flex; gap: 11px; align-items: flex-start; background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+  .seq + .seq { margin-top: 7px; }
+  .seq .min {
+    flex: 0 0 auto; width: 30px; padding-top: 2px;
+    color: var(--blue-dark); font-size: 12px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .seq .pair { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .swap { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.3; }
+  .swap .name { min-width: 0; }
+  .swap.out .name { color: var(--muted); }
+  .swap.in .name { font-weight: 650; }
+  .subs.theirs .swap.in .name { font-weight: 500; color: var(--muted); }
+  .arrow {
+    flex: 0 0 auto; width: 15px; height: 15px; border-radius: 4px;
+    display: grid; place-items: center; font-size: 9px; font-weight: 900; color: #fff;
+  }
+  .arrow.out { background: var(--off); }
+  .arrow.in { background: var(--on); color: var(--on-ink); }
   .squads { padding: 4px 16px 14px; }
   .squad h3 { font-size: 14px; margin: 14px 0 6px; }
   .squad ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }

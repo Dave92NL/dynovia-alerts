@@ -2,45 +2,36 @@
  {
   "assists": 0,
   "goals": 4,
-  "minutes": 244,
+  "minutes": 319,
   "name": "Arkadiusz Kłoda",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 0
  },
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 316,
+  "minutes": 386,
   "name": "Filip Goleś",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 0
  },
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 360,
+  "minutes": 450,
   "name": "Grzegorz Szczepański",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 1
  },
  {
   "assists": 0,
   "goals": 2,
-  "minutes": 145,
+  "minutes": 169,
   "name": "Kamil Socha",
-  "played": 5,
-  "red": 0,
-  "yellow": 1
- },
- {
-  "assists": 0,
-  "goals": 1,
-  "minutes": 270,
-  "name": "Krystian Skubisz",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 1
  },
@@ -48,52 +39,70 @@
   "assists": 0,
   "goals": 1,
   "minutes": 360,
+  "name": "Krystian Skubisz",
+  "played": 6,
+  "red": 0,
+  "yellow": 1
+ },
+ {
+  "assists": 0,
+  "goals": 1,
+  "minutes": 450,
   "name": "Michael Londono Silva",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 0
  },
  {
   "assists": 0,
   "goals": 1,
-  "minutes": 218,
+  "minutes": 284,
   "name": "Paweł Szczawiński",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 2
  },
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 345,
+  "minutes": 420,
   "name": "Ruslan Kovtok",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 0
  },
  {
   "assists": 0,
   "goals": 6,
-  "minutes": 292,
+  "minutes": 358,
   "name": "Sylwester Paszko",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 1
  },
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 360,
+  "minutes": 450,
   "name": "Tomasz Bielaszka",
-  "played": 5,
+  "played": 6,
   "red": 0,
   "yellow": 0
  },
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 360,
+  "minutes": 445,
   "name": "Łukasz Kozioł",
+  "played": 6,
+  "red": 0,
+  "yellow": 0
+ },
+ {
+  "assists": 0,
+  "goals": 0,
+  "minutes": 126,
+  "name": "Jakob Dzik",
   "played": 5,
   "red": 0,
   "yellow": 0
@@ -101,11 +110,11 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 111,
-  "name": "Jakob Dzik",
-  "played": 4,
+  "minutes": 142,
+  "name": "Przemysław Barnaś",
+  "played": 5,
   "red": 0,
-  "yellow": 0
+  "yellow": 1
  },
  {
   "assists": 0,
@@ -119,17 +128,17 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 118,
-  "name": "Przemysław Barnaś",
+  "minutes": 190,
+  "name": "Karol Stankiewicz",
   "played": 4,
   "red": 0,
-  "yellow": 1
+  "yellow": 0
  },
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 175,
-  "name": "Karol Stankiewicz",
+  "minutes": 76,
+  "name": "Jakub Bury",
   "played": 3,
   "red": 0,
   "yellow": 0
@@ -137,29 +146,20 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 56,
-  "name": "Jakub Bury",
-  "played": 2,
-  "red": 0,
-  "yellow": 0
- },
- {
-  "assists": 0,
-  "goals": 0,
-  "minutes": 15,
-  "name": "Patryk Duchniak",
-  "played": 2,
-  "red": 0,
-  "yellow": 0
- },
- {
-  "assists": 0,
-  "goals": 0,
   "minutes": 20,
-  "name": "Sebastian Kustra",
-  "played": 2,
+  "name": "Patryk Duchniak",
+  "played": 3,
   "red": 0,
   "yellow": 0
+ },
+ {
+  "assists": 0,
+  "goals": 0,
+  "minutes": 110,
+  "name": "Sebastian Kustra",
+  "played": 3,
+  "red": 0,
+  "yellow": 1
  },
  {
   "assists": 0,

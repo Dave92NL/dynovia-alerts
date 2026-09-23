@@ -12,7 +12,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+# pyyaml: test_workflow_git.py czyta funkcje gitowe wprost z scrape.yml, zeby
+# mierzyc workflow, a nie jego kopie. Przez to testy maja wlasna zaleznosc,
+# ktorej sam program nie ma - niezadeklarowana przechodzila tylko tam, gdzie
+# ktos mial pyyaml z innego powodu.
+dev = ["pytest>=8", "pyyaml>=6"]
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -48,11 +48,12 @@ jobs:
           # merges: whoever pushed first wins and the late one throws its own
           # work away.
           #
-          # Nothing is lost by that. The scrape repeats on the next tick,
-          # protokoly/ re-imports, and a protocol that arrived over Telegram
-          # rolls back together with the offset that would have marked it read,
-          # because the two live in the same file - so Telegram hands it over
-          # again.
+          # Nothing is lost by that. The scrape repeats on the next tick, and
+          # a protocol that arrived over Telegram rolls back together with the
+          # offset that would have marked it read, because the two live in the
+          # same file - so Telegram hands it over again. (protokoly/*.html is
+          # gitignored and never reaches CI at all, so there is nothing to
+          # re-import from there.)
           take_origin() {
             git rebase --abort 2>/dev/null || true
             git fetch --quiet origin main

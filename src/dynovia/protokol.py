@@ -73,8 +73,13 @@ class Protocol:
     away: str = ""
     squads: dict[str, list[tuple[str, bool]]] = field(default_factory=dict)
     """{team: [(player, started)]} - everyone listed, played or not."""
-    events: list[tuple[int, str, str]] = field(default_factory=list)
-    """(minute, player, kind) with kind in goal|yellow|red|on|off."""
+    events: list[tuple[int, str, str, str]] = field(default_factory=list)
+    """(minute, player, kind, team) with kind in goal|yellow|red|on|off.
+
+    `team` is the side the protocol credits the event to, which is not always
+    the side the player plays for: an own goal is filed under the team that
+    benefits. That mismatch is the only thing that identifies one - the icon
+    is identical for every goal."""
 
 
 def _icon_kind(node) -> str | None:
@@ -147,44 +152,50 @@ def parse_protocol(html: str) -> Protocol:
         if title is None or kind is None:
             continue
         minute = _MINUTE.search(minute_cell.text(strip=True) if minute_cell else "")
+        # The timeline has a column per team: hosts on the left, guests on the
+        # right. Measured on both protocols to hand - it is what tells a goal
+        # apart from an own goal, and nothing else does.
+        classes = (block.attributes.get("class") or "").split()
         protocol.events.append(
             (
                 int(minute.group(1)) if minute else 0,
                 re.sub(r"\s+", " ", title.text(strip=True)).strip(),
                 kind,
+                protocol.away if "right" in classes else protocol.home,
             )
         )
     return protocol
 
 
-def our_squad(protocol: Protocol) -> dict[str, bool]:
-    """{player: started} for Dynovia."""
-    for team, squad in protocol.squads.items():
+def our_team(protocol: Protocol) -> str:
+    """Whatever the protocol calls Dynovia in this match."""
+    for team in protocol.squads:
         if "dynovia" in normalize_team(team):
-            return dict(squad)
-    return {}
+            return team
+    return ""
 
 
-def their_squad(protocol: Protocol) -> dict[str, bool]:
-    """The same for whoever we played.
+def their_team(protocol: Protocol) -> str:
+    """And whoever we played.
 
-    These names are never resolved against kadra.txt - doing so would raise a
+    Their names are never resolved against kadra.txt - doing so would raise a
     question about every single one - so they are stored as written and kept
     out of every statistic by players.ours.
     """
-    for team, squad in protocol.squads.items():
+    for team in protocol.squads:
         if "dynovia" not in normalize_team(team):
-            return dict(squad)
-    return {}
+            return team
+    return ""
 
 
 def to_records(
-    protocol: Protocol, match: MatchKey, squad: dict[str, bool]
+    protocol: Protocol, match: MatchKey, team: str
 ) -> tuple[list[AppearanceData], list[GoalData], list[CardData]]:
-    """One team's half of the protocol. Called once per side: the events are
-    shared between both, and the squad is what says which are whose."""
-    on = {name: minute for minute, name, kind in protocol.events if kind == "on"}
-    off = {name: minute for minute, name, kind in protocol.events if kind == "off"}
+    """One team's half of the protocol. Called once per side, because the
+    timeline is shared and only the side of each event says whose it is."""
+    squad = dict(protocol.squads.get(team, []))
+    on = {name: minute for minute, name, kind, _ in protocol.events if kind == "on"}
+    off = {name: minute for minute, name, kind, _ in protocol.events if kind == "off"}
 
     appearances = []
     for name, started in squad.items():
@@ -200,14 +211,24 @@ def to_records(
             )
         )
 
+    # Goals go by the side the protocol credits, not by who kicked the ball.
+    # The two disagree exactly when it was an own goal, and that disagreement
+    # is the only mark of one: the icon is the same for all of them.
     goals = [
-        GoalData(match=match, player=name, minute=minute)
-        for minute, name, kind in protocol.events
-        if kind == "goal" and name in squad
+        GoalData(
+            match=match,
+            player=name,
+            minute=minute,
+            type="normal" if name in squad else "own",
+        )
+        for minute, name, kind, credited in protocol.events
+        if kind == "goal" and credited == team
     ]
+    # A card is never anyone's but the player's own, so those still go by the
+    # squad - which also drops the bench staff the protocol books alongside.
     cards = [
         CardData(match=match, player=name, minute=minute, color=kind)
-        for minute, name, kind in protocol.events
+        for minute, name, kind, _ in protocol.events
         if kind in ("yellow", "red") and name in squad
     ]
     return appearances, goals, cards
@@ -290,7 +311,10 @@ def import_html(
         )
         return Imported(None, home=protocol.home, away=protocol.away)
 
-    appearances, goals, cards = to_records(protocol, match, our_squad(protocol))
+    appearances, goals, cards = to_records(protocol, match, our_team(protocol))
+    their_app, their_goals, their_cards = to_records(
+        protocol, match, their_team(protocol)
+    )
     log.info(
         "protokol %s: %d wystepow, %d bramek, %d kartek",
         label,
@@ -298,9 +322,20 @@ def import_html(
         len(goals),
         len(cards),
     )
+
+    # Whose name it is decides how the name is handled, and that is not always
+    # whose goal it is. An own goal counts for one team and was kicked by the
+    # other, so Kamil Papak scoring into his own net is our sixth goal and
+    # still an opposition player: resolving him against kadra.txt would ask
+    # the owner who he is.
+    mine, theirs = (
+        [g for g in goals if g.type != "own"] + [g for g in their_goals if g.type == "own"],
+        [g for g in their_goals if g.type != "own"] + [g for g in goals if g.type == "own"],
+    )
+
     conflicts = (
         db.store_lineups(conn, appearances, SOURCE, registry)
-        + db.store_goals(conn, goals, SOURCE, registry)
+        + db.store_goals(conn, mine, SOURCE, registry)
         + db.store_cards(conn, cards, SOURCE, registry)
     )
 
@@ -308,10 +343,10 @@ def import_html(
     # spells them, never matched against kadra.txt, never asked about. They
     # exist so a match screen can show both teams, and players.ours keeps them
     # out of everything else.
-    theirs = to_records(protocol, match, their_squad(protocol))
-    for records, store in zip(theirs, (db.store_lineups, db.store_goals, db.store_cards)):
-        store(conn, records, SOURCE, None)
-    log.info("protokol %s: %d wystepow przeciwnika", label, len(theirs[0]))
+    db.store_lineups(conn, their_app, SOURCE, None)
+    db.store_goals(conn, theirs, SOURCE, None)
+    db.store_cards(conn, their_cards, SOURCE, None)
+    log.info("protokol %s: %d wystepow przeciwnika", label, len(their_app))
     return Imported(
         match,
         conflicts,

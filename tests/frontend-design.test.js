@@ -36,3 +36,9 @@ test("a result opens the match behind it", () => {
   assert.match(app, /history\.pushState/);
   assert.match(html, /\.event\.theirs/);
 });
+
+test("an own goal is shown for the team it counted for, and marked", () => {
+  // It reads as a goal by an opponent otherwise, on our side of the timeline.
+  assert.match(app, /ownGoals/);
+  assert.match(app, /\(sam\.\)/);
+});

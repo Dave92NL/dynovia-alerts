@@ -11,7 +11,9 @@ from dynovia.scrapers.ninetyminut import NinetyMinut
 from dynovia.snapshot import load_fixtures
 
 FIXTURE = pathlib.Path("tests/fixtures/laczynaspilka/grom-2026-09-19.html")
+OWN_GOAL = pathlib.Path("tests/fixtures/laczynaspilka/grodziszczanka-2026-09-13.html")
 GROM = ("2026/27", "dynovia dynow", "grom handzlowka")
+GRODZISZCZANKA = ("2026/27", "grodziszczanka grodzisko dolne", "dynovia dynow")
 SQUAD = [
     "Tomasz Bielaszka", "Michael Londono Silva", "Krystian Skubisz",
     "Grzegorz Szczepański", "Sylwester Paszko", "Kamil Socha", "Jakob Dzik",
@@ -51,17 +53,17 @@ def test_both_squads_are_read(protocol):
 
 def test_events_are_told_apart_by_icon_colour(protocol):
     # The whole timeline, both teams: Grom scored once and were booked twice.
-    kinds = [kind for _, _, kind in protocol.events]
+    kinds = [kind for _, _, kind, _ in protocol.events]
     assert kinds.count("goal") == 4
     assert kinds.count("yellow") == 5
     assert kinds.count("on") == kinds.count("off") == 7
 
 
-def test_the_squad_decides_whose_events_are_whose(protocol):
+def test_the_side_of_the_timeline_decides_whose_goal_it_is(protocol):
     # The timeline is shared: Grom's Kuźniar scored and two of their players
-    # were booked in the same list as ours. The squad passed in is the only
-    # thing that separates them.
-    _, goals, cards = protokol.to_records(protocol, GROM, protokol.our_squad(protocol))
+    # were booked in the same list as ours. Hosts sit on the left of it and
+    # guests on the right, and that column is what separates them.
+    _, goals, cards = protokol.to_records(protocol, GROM, protokol.our_team(protocol))
     assert [g.player for g in goals] == ["Arkadiusz Kłoda", "Filip Goleś", "Filip Goleś"]
     assert sorted(c.player for c in cards) == [
         "Krystian Skubisz",
@@ -70,7 +72,7 @@ def test_the_squad_decides_whose_events_are_whose(protocol):
     ]
 
     _, theirs, their_cards = protokol.to_records(
-        protocol, GROM, protokol.their_squad(protocol)
+        protocol, GROM, protokol.their_team(protocol)
     )
     assert [g.player for g in theirs] == ["Maciej Kuźniar"]
     # Four of the five bookings belong to a squad. The fifth, Jan Kłusek in the
@@ -81,7 +83,7 @@ def test_the_squad_decides_whose_events_are_whose(protocol):
 
 
 def test_playing_time_comes_from_the_substitutions(protocol):
-    appearances, _, _ = protokol.to_records(protocol, GROM, protokol.our_squad(protocol))
+    appearances, _, _ = protokol.to_records(protocol, GROM, protokol.our_team(protocol))
     minutes = {a.player: (a.minute_out or 90) - (a.minute_in or 0) for a in appearances}
     assert minutes["Filip Goleś"] == 77  # started, off in the 77th
     assert minutes["Arkadiusz Kłoda"] == 30  # on in the 60th
@@ -89,7 +91,7 @@ def test_playing_time_comes_from_the_substitutions(protocol):
 
 
 def test_an_unused_substitute_did_not_play(protocol):
-    appearances, _, _ = protokol.to_records(protocol, GROM, protokol.our_squad(protocol))
+    appearances, _, _ = protokol.to_records(protocol, GROM, protokol.our_team(protocol))
     assert len(appearances) == 15  # 11 + 4 who came on, of 18 named
     assert "Sebastian Urbaniak" not in {a.player for a in appearances}
 
@@ -233,3 +235,83 @@ def test_our_goals_are_never_counted_from_two_sources_at_once(conn):
     # and theirGoals deliberately holds only the opposition.
     assert len(match["scorers"]) == 3
     assert all(g["player"] != "Maciej Kuźniar" for g in match["scorers"])
+
+
+# --- samobój ---------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def own_goal_protocol():
+    return protokol.parse_protocol(OWN_GOAL.read_text(encoding="utf-8"))
+
+
+def test_an_own_goal_counts_for_the_team_that_did_not_score_it(own_goal_protocol):
+    # Grodziszczanka 1-6 Dynovia. Seven goals on the timeline, and Kamil Papak
+    # of Grodziszczanka put one of them past his own keeper: it sits in
+    # Dynovia's column although his name is on it. Going by the name alone
+    # gave us five goals and them two, which is not the result that was played.
+    pr = own_goal_protocol
+    _, ours, _ = protokol.to_records(pr, GRODZISZCZANKA, protokol.our_team(pr))
+    _, theirs, _ = protokol.to_records(pr, GRODZISZCZANKA, protokol.their_team(pr))
+
+    assert (len(ours), len(theirs)) == (6, 1)
+    own = [g for g in ours if g.type == "own"]
+    assert [(g.player, g.minute) for g in own] == [("Kamil Papak", 82)]
+    assert all(g.type == "normal" for g in theirs)
+
+
+def test_a_plain_goal_is_never_marked_as_an_own_one(protocol):
+    _, ours, _ = protokol.to_records(protocol, GROM, protokol.our_team(protocol))
+    _, theirs, _ = protokol.to_records(protocol, GROM, protokol.their_team(protocol))
+    assert {g.type for g in ours + theirs} == {"normal"}
+
+
+def test_an_own_goal_scorer_is_still_an_opposition_player(conn):
+    # He is our sixth goal and someone else's player at the same time. Sending
+    # him through kadra.txt would ask the owner who he is; leaving him out of
+    # the roster check is what keeps that question from ever being asked.
+    protokol.import_file(conn, OWN_GOAL, REGISTRY)
+    row = conn.execute(
+        "SELECT p.ours, g.type FROM goals g JOIN players p ON p.id = g.player_id"
+        " WHERE p.name = 'Kamil Papak'"
+    ).fetchone()
+    assert (row["ours"], row["type"]) == (0, "own")
+
+    from dynovia import stats
+
+    # And he is nobody's scorer in our statistics.
+    assert "Kamil Papak" not in dict(stats.goals_by_player(conn, "2026/27"))
+
+
+def test_the_app_gets_an_own_goal_as_neither_side_scoring(conn):
+    from dynovia import export
+
+    protokol.import_file(conn, OWN_GOAL, REGISTRY)
+    match = [
+        m for m in export.build(conn, "2026/27")["matches.json"]
+        if m["date"] == "2026-09-13"
+    ][0]
+
+    # Grodziszczanka scored once. Counting Papak among them made it two and
+    # contradicted the 1-6 on the same screen.
+    assert [g["player"] for g in match["theirGoals"]] == ["Kazimierz Leja"]
+    assert match["ownGoals"] == [
+        {"player": "Kamil Papak", "minute": 82, "ours": True}
+    ]
+    # And he is not one of our scorers either, because he is not our player.
+    assert all(g["player"] != "Kamil Papak" for g in match["scorers"])
+
+
+def test_every_match_gets_its_own_lists(conn):
+    # _empty() is a function for a reason: a shared dict would pour every
+    # match's squads into whichever match was seen first.
+    from dynovia import export
+
+    protokol.import_file(conn, OWN_GOAL, REGISTRY)
+    protokol.import_file(conn, FIXTURE, REGISTRY)
+    grane = [
+        m for m in export.build(conn, "2026/27")["matches.json"]
+        if m["date"] in ("2026-09-13", "2026-09-19")
+    ]
+    assert [len(m["lineup"]) for m in grane] == [29, 29]
+    assert [len(m["ownGoals"]) for m in grane] == [1, 0]

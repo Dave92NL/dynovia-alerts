@@ -23,6 +23,15 @@ log = logging.getLogger(__name__)
 WEB_DATA = ROOT / "web" / "data"
 US = normalize_team(CLUB)
 
+def _empty() -> dict:
+    """What a match with no details of its own exports, so the app never has to
+    check whether a key is there.
+
+    A function, not a constant: a dict.copy() of one would hand every match the
+    same lists and quietly pour all of them into a single match.
+    """
+    return {"lineup": [], "cards": [], "theirGoals": [], "ownGoals": []}
+
 PROTOCOL = "laczynaspilka"
 """The only source that carries minutes - the same rule player_summary counts
 by. A lineup from anywhere else is a list of names and says so."""
@@ -77,7 +86,7 @@ def _details_by_match(conn, season: str) -> dict[int, dict]:
         (season,),
     ).fetchall()
     for row in rows:
-        side = details.setdefault(row["match_id"], {"lineup": [], "cards": [], "theirGoals": []})
+        side = details.setdefault(row["match_id"], _empty())
         entry = {
             "name": row["name"],
             "ours": bool(row["ours"]),
@@ -103,7 +112,7 @@ def _details_by_match(conn, season: str) -> dict[int, dict]:
         " ORDER BY COALESCE(c.minute, 999), p.name",
         (season,),
     ):
-        side = details.setdefault(row["match_id"], {"lineup": [], "cards": [], "theirGoals": []})
+        side = details.setdefault(row["match_id"], _empty())
         side["cards"].append(
             {
                 "name": row["name"],
@@ -117,16 +126,39 @@ def _details_by_match(conn, season: str) -> dict[int, dict]:
     # source for the whole match; taking them from here as well would list a
     # goal twice whenever two sources saw it. Nobody but the protocol records
     # the opposition at all, so there is nothing to choose between.
+    #
+    # An own goal is left out of both: it counts for the team the scorer does
+    # not play for, so it belongs to neither list and gets its own.
     for row in conn.execute(
         "SELECT DISTINCT g.match_id, p.name, g.minute FROM goals g"
         " JOIN players p ON p.id = g.player_id AND p.ours = 0"
-        " JOIN matches m ON m.id = g.match_id WHERE m.season = ?"
+        " JOIN matches m ON m.id = g.match_id"
+        " WHERE m.season = ? AND g.type != 'own'"
         " ORDER BY COALESCE(g.minute, 999), p.name",
         (season,),
     ):
-        side = details.setdefault(row["match_id"], {"lineup": [], "cards": [], "theirGoals": []})
+        side = details.setdefault(row["match_id"], _empty())
         side["theirGoals"].append(
             {"player": row["name"], "minute": row["minute"]}
+        )
+
+    # `ours` is who it counted for, which is the opposite of the squad the
+    # scorer belongs to - that is what makes it an own goal in the first place.
+    for row in conn.execute(
+        "SELECT DISTINCT g.match_id, p.name, p.ours, g.minute FROM goals g"
+        " JOIN players p ON p.id = g.player_id"
+        " JOIN matches m ON m.id = g.match_id"
+        " WHERE m.season = ? AND g.type = 'own'"
+        " ORDER BY COALESCE(g.minute, 999), p.name",
+        (season,),
+    ):
+        side = details.setdefault(row["match_id"], _empty())
+        side["ownGoals"].append(
+            {
+                "player": row["name"],
+                "minute": row["minute"],
+                "ours": not row["ours"],
+            }
         )
     return details
 
@@ -157,7 +189,7 @@ def build(conn, season: str) -> dict[str, object]:
                 "status": match.status,
                 "atHome": normalize_team(match.home) == US,
                 "scorers": scorers.get(match_id, []),
-                **details.get(match_id, {"lineup": [], "cards": [], "theirGoals": []}),
+                **details.get(match_id, _empty()),
             }
         )
 

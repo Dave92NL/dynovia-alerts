@@ -667,8 +667,14 @@ def store_goals(conn, goals, source, registry) -> list[tuple[int, merge.Conflict
         goals,
         source,
         registry,
-        "INSERT OR IGNORE INTO goals (match_id, player_id, minute, type, source)"
-        " VALUES (?, ?, ?, ?, ?)",
+        # Not INSERT OR IGNORE: the type can be learned late. An own goal was
+        # stored as a plain one for as long as nothing read the side of the
+        # timeline, and re-importing the protocol has to be able to correct
+        # that rather than skip the row it already has.
+        "INSERT INTO goals (match_id, player_id, minute, type, source)"
+        " VALUES (?, ?, ?, ?, ?)"
+        " ON CONFLICT (match_id, player_id, source, COALESCE(minute, -1))"
+        " DO UPDATE SET type = excluded.type",
         ("minute", "type"),
     )
 

@@ -22,7 +22,7 @@
  * a nie "różny od": przez pierwsze minuty po deployu meta.json jest jeszcze
  * poprzedni i "różny od" krzyczałby o nowej wersji, pokazując na starą.
  */
-const APP_VERSION = 1;
+const APP_VERSION = 2;
 
 const DATA = ["meta", "matches", "stats", "table", "sources"];
 const state = {};
@@ -120,35 +120,48 @@ function renderResults() {
     box.innerHTML = '<div class="card empty">Jeszcze nic nie rozegrano.</div>';
     return;
   }
-  const card = el('<div class="card results-card"></div>');
   for (const { m, index } of played) {
     const ours = m.atHome ? m.homeScore : m.awayScore;
     const theirs = m.atHome ? m.awayScore : m.homeScore;
     const result = ours > theirs ? "win" : ours < theirs ? "loss" : "draw";
-    card.append(
-      el(`<div class="match" role="button" tabindex="0" data-match="${index}">
-        <div class="date">${esc(shortDate(m.date))}</div>
-        <div class="teams">${
-          m.atHome
-            ? `<em>${esc(m.home)}</em> – ${esc(m.away)}`
-            : `${esc(m.home)} – <em>${esc(m.away)}</em>`
-        }</div>
-        <div class="score ${result}">${m.homeScore}–${m.awayScore}</div>
-        <div class="chevron">›</div>
+    const goals = m.scorers
+      .map((g) => esc(g.player) + (g.minute ? ` ${g.minute}'` : ""))
+      .join(" · ");
+    box.append(
+      el(`<div class="card match-card" role="button" tabindex="0" data-match="${index}">
+        <div class="mc-top">
+          <span class="tag">${esc(shortDate(m.date))}${
+            m.round ? " · kolejka " + esc(m.round) : ""
+          }</span>
+          <span class="score ${result}">${m.homeScore}–${m.awayScore}</span>
+        </div>
+        <div class="mc-teams">
+          <span>${
+            m.atHome
+              ? `<em>${esc(m.home)}</em> – ${esc(m.away)}`
+              : `${esc(m.home)} – <em>${esc(m.away)}</em>`
+          }</span>
+          <span class="chevron">›</span>
+        </div>
+        ${goals ? `<div class="mc-goals">⚽ ${goals}</div>` : ""}
       </div>`)
     );
-    if (m.scorers.length) {
-      const list = m.scorers
-        .map((g) => esc(g.player) + (g.minute ? ` ${g.minute}'` : ""))
-        .join(" · ");
-      card.append(el(`<div class="goals">⚽ ${list}</div>`));
-    }
   }
-  card.addEventListener("click", (event) => {
-    const row = event.target.closest("[data-match]");
-    if (row) openMatch(Number(row.dataset.match));
+  // Delegowane na kontenerze, a nie wpinane w każdy kafelek z osobna: kafelków
+  // przybywa z każdą kolejką, a słuchacz jest jeden przez cały sezon.
+  box.addEventListener("click", (event) => {
+    const tile = event.target.closest("[data-match]");
+    if (tile) openMatch(Number(tile.dataset.match));
   });
-  box.append(card);
+  // role="button" i tabindex bez tego kłamią: czytnik ekranu zapowiada
+  // przycisk, a Enter i spacja nic nie robią.
+  box.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const tile = event.target.closest("[data-match]");
+    if (!tile) return;
+    event.preventDefault();
+    openMatch(Number(tile.dataset.match));
+  });
 }
 
 /* --- jeden mecz ----------------------------------------------------------- */

@@ -104,20 +104,32 @@
   .section-heading { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 2px 10px; }
   .section-heading h2 { margin: 0; font-size: 17px; letter-spacing: -.2px; }
   .section-heading span { color: var(--muted); font-size: 12px; }
-  .results-card { padding: 8px 16px; }
-  .match { display: flex; align-items: center; gap: 9px; padding: 12px 0 8px; }
-  .match + .match, .goals + .match { border-top: 1px solid var(--line); }
-  .match .date { width: 40px; font-size: 11px; color: var(--muted); font-weight: 700; flex: 0 0 auto; }
-  .match .teams { flex: 1; min-width: 0; font-size: 13px; line-height: 1.25; }
-  .match .teams em { font-style: normal; font-weight: 650; }
-  .match .score {
-    min-width: 43px; padding: 4px 6px; border-radius: 8px; text-align: center;
-    background: #eef4fa; color: var(--blue-dark); font-weight: 800; font-variant-numeric: tabular-nums; flex: 0 0 auto;
+  /* Kazdy mecz osobnym kafelkiem. W jednej karcie kreski musialy udawac
+     granice miedzy meczami, a nazwy druzyn lamaly sie na dwie linie obok
+     daty i wyniku wciśniętych w ten sam wiersz. Kafelek ma trzy wiersze,
+     kazdy o czym innym, i nic sie nie bije o szerokosc. */
+  .match-card { padding: 13px 15px; cursor: pointer; }
+  .match-card:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .mc-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .mc-teams { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 14.5px; line-height: 1.3; }
+  .mc-teams > span:first-child { flex: 1; min-width: 0; }
+  .mc-teams em { font-style: normal; font-weight: 700; }
+  .mc-goals {
+    margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line);
+    font-size: 11.5px; color: var(--muted); line-height: 1.45;
   }
-  .match .score.win { background: #e9f6ef; color: var(--success); }
-  .match .score.loss { background: #fbeef0; color: #a72c3d; }
-  .match .score.pending { color: var(--muted); font-weight: 500; }
-  .goals { font-size: 11px; color: var(--muted); padding: 0 0 11px 49px; line-height: 1.4; }
+  .score {
+    min-width: 46px; padding: 4px 8px; border-radius: 8px; text-align: center;
+    background: #eef4fa; color: var(--blue-dark); font-weight: 800;
+    font-variant-numeric: tabular-nums; flex: 0 0 auto;
+  }
+  .score.win { background: #e9f6ef; color: var(--success); }
+  .score.loss { background: #fbeef0; color: #a72c3d; }
+  .score.pending { color: var(--muted); font-weight: 500; }
+  @media (prefers-reduced-motion: no-preference) {
+    .match-card { transition: transform .12s ease, box-shadow .12s ease; }
+    .match-card:active { transform: scale(.985); box-shadow: 0 3px 12px rgba(24,48,79,.09); }
+  }
   .stat-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
   .stat-summary div { padding: 12px 8px; background: #fff; border: 1px solid #e4ebf2; box-shadow: 0 5px 14px rgba(24,48,79,.05); border-radius: 14px; text-align: center; }
   .stat-summary b { display: block; color: var(--blue); font-size: 21px; line-height: 1.1; }
@@ -156,7 +168,7 @@
   }
   button.push[disabled] { background: var(--line); color: var(--muted); }
   .match[role="button"] { cursor: pointer; }
-  .match .chevron { color: var(--muted); font-size: 20px; line-height: 1; flex: 0 0 auto; }
+  .chevron { color: var(--muted); font-size: 20px; line-height: 1; flex: 0 0 auto; }
   button.back {
     background: none; border: 0; color: var(--blue); font: inherit;
     font-weight: 650; padding: 4px 2px 10px; cursor: pointer;

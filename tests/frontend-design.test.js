@@ -49,6 +49,21 @@ test("an own goal is shown for the team it counted for, and marked", () => {
   assert.match(app, /samobój/);
 });
 
+test("every result is its own tile, openable by tap and by keyboard", () => {
+  // One card per match rather than rows inside a single card: the shared card
+  // needed rules to fake a border between matches, and the date, both team
+  // names and the score fought over one line at phone width.
+  assert.match(app, /class="card match-card"/);
+  assert.match(html, /\.match-card \{/);
+  assert.doesNotMatch(html, /\.results-card/);
+  // role="button" and tabindex without a key handler lie to a screen reader:
+  // it announces a button that Enter and Space do nothing to.
+  assert.match(app, /role="button" tabindex="0" data-match=/);
+  assert.match(app, /event\.key !== "Enter" && event\.key !== " "/);
+  // Delegated on the container - tiles arrive with every round played.
+  assert.match(app, /box\.addEventListener\("click"/);
+});
+
 test("goals sit under the score, cards and substitutions below it", () => {
   // Goals belong to the scoreline, so they render inside the hero card and
   // not as a section of their own.

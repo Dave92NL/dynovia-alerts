@@ -934,138 +934,268 @@
   "atHome": true,
   "away": "Plantator Nienadówka",
   "awayScore": 1,
-  "cards": [],
+  "cards": [
+   {
+    "color": "yellow",
+    "minute": 44,
+    "name": "Sylwester Paszko",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 51,
+    "name": "Sebastian Kustra",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 54,
+    "name": "Oliwier Prucnal",
+    "ours": false
+   },
+   {
+    "color": "yellow",
+    "minute": 61,
+    "name": "Ruslan Kovtok",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 69,
+    "name": "Paweł Szczawiński",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 75,
+    "name": "Marcin Ożóg",
+    "ours": false
+   }
+  ],
   "competition": "Klasa A",
   "date": "2026-09-06",
   "home": "Dynovia Dynów",
   "homeScore": 2,
   "lineup": [
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 60,
+    "minutes": true,
     "name": "Arkadiusz Kłoda",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 60,
+    "minutes": true,
     "name": "Filip Goleś",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Grzegorz Szczepański",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 25,
+    "minutes": true,
     "name": "Jakub Uryć",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Krystian Skubisz",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Michael Londono Silva",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Paweł Szczawiński",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Ruslan Kovtok",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Sylwester Paszko",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Tomasz Bielaszka",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Łukasz Kozioł",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 60,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Kamil Socha",
     "ours": true,
     "started": false
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 60,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Przemysław Barnaś",
     "ours": true,
     "started": false
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 25,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Sebastian Kustra",
     "ours": true,
     "started": false
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Dariusz Kurasiński",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Jakub Maruszak",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Jakub Zięba",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Maciej Kot",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Maciej Krzanowski",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Marcin Ożóg",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Michał Kołodziej",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Oliwier Prucnal",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Piotr Baranowski",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Przemysław Kraska",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Tadeusz Chorzępa",
+    "ours": false,
+    "started": true
    }
   ],
   "round": 4,
   "scorers": [
    {
-    "minute": null,
-    "player": "Paweł Szczawiński"
+    "minute": 21,
+    "player": "Sylwester Paszko"
    },
    {
-    "minute": null,
-    "player": "Sylwester Paszko"
+    "minute": 43,
+    "player": "Paweł Szczawiński"
    }
   ],
   "status": "finished",
-  "theirGoals": [],
+  "theirGoals": [
+   {
+    "minute": 65,
+    "player": "Maciej Krzanowski"
+   }
+  ],
   "time": "16:00"
  },
  {

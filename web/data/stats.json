@@ -2,7 +2,7 @@
  {
   "assists": 0,
   "goals": 4,
-  "minutes": 319,
+  "minutes": 379,
   "name": "Arkadiusz Kłoda",
   "played": 6,
   "red": 0,
@@ -11,7 +11,7 @@
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 386,
+  "minutes": 446,
   "name": "Filip Goleś",
   "played": 6,
   "red": 0,
@@ -20,7 +20,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 450,
+  "minutes": 540,
   "name": "Grzegorz Szczepański",
   "played": 6,
   "red": 0,
@@ -29,7 +29,7 @@
  {
   "assists": 0,
   "goals": 2,
-  "minutes": 169,
+  "minutes": 199,
   "name": "Kamil Socha",
   "played": 6,
   "red": 0,
@@ -38,7 +38,7 @@
  {
   "assists": 0,
   "goals": 1,
-  "minutes": 360,
+  "minutes": 450,
   "name": "Krystian Skubisz",
   "played": 6,
   "red": 0,
@@ -47,7 +47,7 @@
  {
   "assists": 0,
   "goals": 1,
-  "minutes": 450,
+  "minutes": 540,
   "name": "Michael Londono Silva",
   "played": 6,
   "red": 0,
@@ -56,34 +56,34 @@
  {
   "assists": 0,
   "goals": 1,
-  "minutes": 284,
+  "minutes": 374,
   "name": "Paweł Szczawiński",
   "played": 6,
   "red": 0,
-  "yellow": 2
+  "yellow": 3
  },
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 420,
+  "minutes": 510,
   "name": "Ruslan Kovtok",
-  "played": 6,
-  "red": 0,
-  "yellow": 0
- },
- {
-  "assists": 0,
-  "goals": 6,
-  "minutes": 358,
-  "name": "Sylwester Paszko",
   "played": 6,
   "red": 0,
   "yellow": 1
  },
  {
   "assists": 0,
+  "goals": 6,
+  "minutes": 448,
+  "name": "Sylwester Paszko",
+  "played": 6,
+  "red": 0,
+  "yellow": 2
+ },
+ {
+  "assists": 0,
   "goals": 0,
-  "minutes": 450,
+  "minutes": 540,
   "name": "Tomasz Bielaszka",
   "played": 6,
   "red": 0,
@@ -92,7 +92,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 445,
+  "minutes": 535,
   "name": "Łukasz Kozioł",
   "played": 6,
   "red": 0,
@@ -110,7 +110,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 142,
+  "minutes": 172,
   "name": "Przemysław Barnaś",
   "played": 5,
   "red": 0,
@@ -119,7 +119,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 175,
+  "minutes": 200,
   "name": "Jakub Uryć",
   "played": 4,
   "red": 0,
@@ -155,11 +155,11 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 110,
+  "minutes": 175,
   "name": "Sebastian Kustra",
   "played": 3,
   "red": 0,
-  "yellow": 1
+  "yellow": 2
  },
  {
   "assists": 0,

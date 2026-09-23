@@ -10,6 +10,20 @@
  * clock, so `new Date("2026-09-27T14:00")` is the right instant.
  */
 
+/* Numer wersji powłoki. Podbijany ręcznie przy każdej zmianie w app.js,
+ * index.html albo sw.js - nie ma tu build-stepu, który mógłby go policzyć.
+ *
+ * export.py przepisuje tę liczbę do meta.json, a meta.json idzie do
+ * przeglądarki zawsze świeży (sw.js trzyma /data/ na no-store). Uruchomiona
+ * kopia aplikacji zna więc swoją wersję ze stałej poniżej, a wersję leżącą
+ * na serwerze z meta.json - i po ich porównaniu wie, czy jest przestarzała.
+ *
+ * Liczba całkowita, nie hash czy data, bo porównanie ma być "większy niż",
+ * a nie "różny od": przez pierwsze minuty po deployu meta.json jest jeszcze
+ * poprzedni i "różny od" krzyczałby o nowej wersji, pokazując na starą.
+ */
+const APP_VERSION = 1;
+
 const DATA = ["meta", "matches", "stats", "table", "sources"];
 const state = {};
 
@@ -435,6 +449,8 @@ function updateCard() {
     // Private window or blocked site data. The confirmation is a nicety, not
     // worth losing the card over.
   }
+  const latest = Number(state.meta?.appVersion);
+  const behind = Number.isFinite(latest) && latest > APP_VERSION;
   return `<div class="card">
     <span class="tag">Wersja aplikacji</span>
     ${
@@ -442,19 +458,65 @@ function updateCard() {
         ? '<p class="done">✓ Pobrano najnowszą wersję.</p>'
         : ""
     }
-    <p>Aplikacja ładuje się z pamięci telefonu, żeby otwierała się od razu
-    i działała bez zasięgu. Nowa wersja wchodzi więc zwykle dopiero za drugim
-    otwarciem. Tym przyciskiem pobierzesz ją natychmiast.</p>
+    <p class="ver">Ta kopia: <b>${APP_VERSION}</b>${
+      Number.isFinite(latest) ? ` · na serwerze: <b>${latest}</b>` : ""
+    }</p>
+    <p>${
+      behind
+        ? "Jest nowsza wersja - pobierz ją przyciskiem poniżej."
+        : `Aplikacja ładuje się z pamięci telefonu, żeby otwierała się od razu
+           i działała bez zasięgu. Nowa wersja wchodzi więc zwykle dopiero za
+           drugim otwarciem. Tym przyciskiem pobierzesz ją natychmiast.`
+    }</p>
     <button class="push" id="refreshApp">Zaktualizuj aplikację</button>
     <div id="refreshOut"></div>
   </div>`;
 }
 
-async function refreshApp() {
-  const button = $("refreshApp");
+/* --- nowa wersja na serwerze ---------------------------------------------- */
+
+let versionCheckedAt = 0;
+
+/* meta.json idzie przez gałąź /data/ w sw.js, czyli zawsze z sieci i zawsze
+   no-store. To, co stąd przychodzi, jest więc stanem serwera, a nie tym, co
+   przeglądarka zdążyła sobie zapamiętać. */
+function noteVersion(meta) {
+  const latest = Number(meta?.appVersion);
+  // Brak liczby to nie jest "jest nowa wersja", i starszy numer też nie:
+  // przez pierwsze minuty po deployu meta.json opisuje jeszcze poprzednią
+  // wersję, co znaczy tylko tyle, że workflow jeszcze nie przemielił danych.
+  if (!Number.isFinite(latest) || latest <= APP_VERSION) return;
+  const banner = $("updateBanner");
+  if (!banner || !banner.hidden) return;
+  $("updateBannerText").textContent = `Jest nowa wersja aplikacji (${latest})`;
+  banner.hidden = false;
+}
+
+/* Powrót do aplikacji to najczęstszy moment, w którym coś zdążyło wyjść -
+   telefon leżał pół dnia w kieszeni. Pytanie jest tanie, jeden mały plik,
+   ale nie na tyle, żeby zadawać je przy każdym mrugnięciu ekranu. */
+async function recheckVersion() {
+  if (document.visibilityState !== "visible") return;
+  if (Date.now() - versionCheckedAt < 60e3) return;
+  versionCheckedAt = Date.now();
+  try {
+    const meta = await fetch("data/meta.json", { cache: "no-store" }).then((r) => r.json());
+    noteVersion(meta);
+  } catch {
+    // Brak zasięgu. Banner i tak wskoczy przy następnym powrocie.
+  }
+}
+
+/* Wołane i z karty w Źródłach, i z bannera, więc bierze przycisk ze zdarzenia
+   zamiast szukać jednego po id - karty może w ogóle nie być w DOM-ie. */
+async function refreshApp(event) {
+  const button = event && event.currentTarget;
   const out = $("refreshOut");
-  button.disabled = true;
-  out.textContent = "Pobieram najnowszą wersję…";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Pobieram…";
+  }
+  if (out) out.textContent = "Pobieram najnowszą wersję…";
   try {
     // The shell lives in the service worker's cache: drop it and the next
     // load has to go to the network. The cache name belongs to sw.js and can
@@ -599,8 +661,13 @@ async function load() {
   $("updated").textContent = `Zaktualizowano ${when.toLocaleString("pl-PL", {
     day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
   })}`;
+  versionCheckedAt = Date.now();
+  noteVersion(state.meta);
   renderNext();
 }
+
+$("bannerRefresh").addEventListener("click", refreshApp);
+document.addEventListener("visibilitychange", recheckVersion);
 
 load().catch((err) => {
   $("next").innerHTML =

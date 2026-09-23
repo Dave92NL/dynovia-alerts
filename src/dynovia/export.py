@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
+import re
 from pathlib import Path
 
 from dynovia import db, stats
@@ -21,7 +22,32 @@ from dynovia.models import CLUB, normalize_team, season_for
 log = logging.getLogger(__name__)
 
 WEB_DATA = ROOT / "web" / "data"
+APP_JS = ROOT / "web" / "app.js"
 US = normalize_team(CLUB)
+
+_APP_VERSION = re.compile(r"^const APP_VERSION = (\d+);", re.MULTILINE)
+
+
+def app_version(path: Path = APP_JS) -> int | None:
+    """The shell version app.js declares, copied into meta.json so a running
+    copy can tell whether it is the one currently deployed.
+
+    app.js is the single source of truth and this only mirrors it; there is no
+    build step to compute a hash, and a number the page also carries is the
+    only thing both sides can compare. Unreadable or unparsable means no
+    version in meta.json, which the page reads as "say nothing" rather than as
+    an update - a banner pointing at a version that cannot be named is worse
+    than no banner.
+    """
+    try:
+        found = _APP_VERSION.search(path.read_text(encoding="utf-8"))
+    except OSError:
+        log.warning("app.js nie da sie odczytac - meta.json bez appVersion")
+        return None
+    if found is None:
+        log.warning("app.js bez stalej APP_VERSION - meta.json bez appVersion")
+        return None
+    return int(found.group(1))
 
 def _empty() -> dict:
     """What a match with no details of its own exports, so the app never has to
@@ -241,6 +267,7 @@ def build(conn, season: str) -> dict[str, object]:
     return {
         "meta.json": {
             "generatedAt": newest[:19] or None,
+            "appVersion": app_version(),
             "season": season,
             "club": CLUB,
             # Not a secret: the page needs it to subscribe at all.

@@ -71,7 +71,11 @@
   nav button[aria-current="true"] { color: var(--blue); }
   nav button[aria-current="true"]::after { content: ""; position: absolute; top: 0; left: 50%; width: 20px; height: 3px; transform: translateX(-50%); border-radius: 2px; background: var(--gold); }
   main { padding: 18px 16px 4px; max-width: 640px; margin: -14px auto 0; }
-  section[hidden] { display: none; }
+  /* Globalnie, nie samo section[hidden]: kazda klasa, ktora ustawia wlasny
+     display, bije domyslne [hidden] przegladarki - style autora wygrywaja ze
+     stylami UA niezaleznie od specyficznosci. Element z atrybutem hidden
+     zostawal wiec na ekranie, co wygladalo jak blad logiki, a bylo kaskada. */
+  [hidden] { display: none !important; }
   .card {
     background: var(--card); border: 1px solid rgba(18,34,56,.05); border-radius: 20px; padding: 18px;
     box-shadow: 0 8px 26px rgba(24,48,79,.07); margin-bottom: 14px;
@@ -240,7 +244,34 @@
   .squad li:last-child { border-bottom: 0; }
   .squad .min { color: var(--muted); font-size: 11px; }
   .squad .tag { display: block; margin-top: 10px; }
+  /* Przyklejony pod paskiem systemowym, a nie wpięty tylko na gorze strony:
+     powiadomienie ma trafic do kogos, kto przeglada wyniki w polowie listy,
+     a nie czekac az przewinie na sam gora. */
+  .update-banner {
+    position: sticky; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + 8px);
+    display: flex; align-items: center; gap: 10px; justify-content: space-between;
+    margin: 10px 14px -4px; padding: 10px 10px 10px 14px;
+    background: var(--gold); color: var(--blue-dark);
+    border-radius: 14px; box-shadow: 0 6px 18px rgba(18, 34, 56, .2);
+    font-size: 13.5px; font-weight: 650;
+    animation: drop-in .3s cubic-bezier(.2, .9, .3, 1.15);
+  }
+  @keyframes drop-in {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: none; }
+  }
+  .update-banner button {
+    flex: 0 0 auto; border: 0; border-radius: 9px; padding: 8px 14px;
+    background: var(--blue-dark); color: #fff;
+    font: inherit; font-weight: 700; cursor: pointer;
+  }
+  .update-banner button:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
+  .update-banner button[disabled] { opacity: .6; }
+  @media (prefers-reduced-motion: reduce) { .update-banner { animation: none; } }
+
   .done { color: var(--success); font-weight: 650; }
+  .ver { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .ver b { color: var(--ink); }
   #refreshOut { color: var(--muted); font-size: 12px; text-align: center; padding-top: 8px; }
   .help p { margin: 8px 0; }
   .help ol { margin: 8px 0; padding-left: 20px; }
@@ -265,6 +296,11 @@
     <p id="season">—</p>
   </div>
 </header>
+
+<div class="update-banner" id="updateBanner" hidden>
+  <span id="updateBannerText">Jest nowa wersja aplikacji</span>
+  <button type="button" id="bannerRefresh">Odśwież</button>
+</div>
 
 <nav id="tabs">
   <button data-tab="next" aria-current="true">Najbliższy</button>

@@ -30,16 +30,74 @@ test("a result opens the match behind it", () => {
   // reversed, so its own position means nothing to renderMatch.
   assert.match(app, /data-match=/);
   assert.match(app, /function renderMatch/);
-  // Both sides in one timeline, theirs from the protocol only.
+  // Both sides shown, theirs from the protocol only.
   assert.match(app, /theirGoals/);
   // pushState, so the iOS back swipe leaves the match and not the whole app.
   assert.match(app, /history\.pushState/);
-  assert.match(html, /\.event\.theirs/);
+  // Opponents recede rather than disappear, in every one of the three lists.
+  assert.match(html, /\.goal\.theirs/);
+  assert.match(html, /\.row\.theirs/);
+  assert.match(html, /\.subs\.theirs/);
 });
 
 test("an own goal is shown for the team it counted for, and marked", () => {
-  // It reads as a goal by an opponent otherwise, on our side of the timeline.
+  // It reads as a goal by an opponent otherwise, on our side of the match.
   assert.match(app, /ownGoals/);
-  // The red ball, not the plain one that every other goal on the timeline has.
-  assert.match(app, /mark: "🔴"/);
+  // The red ball, not the plain one every other goal gets, plus the word -
+  // the colour alone is a coin flip on a small screen.
+  assert.match(app, /g\.own \? "🔴" : "⚽"/);
+  assert.match(app, /samobój/);
+});
+
+test("goals sit under the score, cards and substitutions below it", () => {
+  // Goals belong to the scoreline, so they render inside the hero card and
+  // not as a section of their own.
+  assert.match(app, /\$\{goalsBlock\(m\)\}\s*<\/div>/);
+  assert.match(app, /<h2>Kartki<\/h2>/);
+  assert.match(app, /<h2>Zmiany<\/h2>/);
+  // The old single "Przebieg" list mixed all three together.
+  assert.doesNotMatch(app, /Przebieg/);
+});
+
+test("the running score is hidden unless it lands on the final result", () => {
+  // Goals come from whichever source carries them, so a match can be stored
+  // with fewer than were scored. Half a tally reads as the real thing.
+  assert.match(app, /exact: home === match\.homeScore && away === match\.awayScore/);
+  assert.match(app, /\$\{exact \? `<span class="run">/);
+});
+
+test("a substitution sequence is one minute, not a pair of players", () => {
+  // The protocol records who went off and who came on, never who replaced
+  // whom - two of each moved at 80' against Grodziszczanka.
+  assert.match(app, /function subSequences/);
+  assert.match(app, /byMinute/);
+  // Walking off on a red card is not a substitution.
+  assert.match(app, /sentOff/);
+  assert.match(html, /\.seq \{/);
+});
+
+test("the app can tell it is out of date and says so at the top", () => {
+  // A plain integer, because the comparison has to be "newer than" and not
+  // "different from": meta.json trails a deploy by a workflow tick.
+  assert.match(app, /^const APP_VERSION = \d+;$/m);
+  assert.match(app, /latest <= APP_VERSION/);
+  // The banner is markup in the page, not built on the fly, so it can be
+  // revealed before any render has run.
+  assert.match(html, /id="updateBanner"/);
+  assert.match(html, /\.update-banner \{/);
+  // Sticky: the notice has to reach someone halfway down the results list.
+  assert.match(html, /position: sticky/);
+  // Coming back to the app is when a new version is most likely waiting.
+  assert.match(app, /visibilitychange/);
+});
+
+test("the shell is refreshed by clearing its cache, not by a reload flag", () => {
+  // location.reload(true) has been a no-op for years.
+  assert.match(app, /caches\.keys\(\)/);
+  assert.match(app, /startsWith\("dynovia-shell"\)/);
+  assert.match(app, /registration\.update\(\)/);
+  // Without this the revalidation can be answered from the browser's own HTTP
+  // cache and put back the very file it exists to replace.
+  const sw = readFileSync(new URL("../web/sw.js", import.meta.url), "utf8");
+  assert.match(sw, /cache: "reload"/);
 });

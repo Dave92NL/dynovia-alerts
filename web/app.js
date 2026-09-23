@@ -22,7 +22,7 @@
  * a nie "różny od": przez pierwsze minuty po deployu meta.json jest jeszcze
  * poprzedni i "różny od" krzyczałby o nowej wersji, pokazując na starą.
  */
-const APP_VERSION = 2;
+const APP_VERSION = 3;
 
 const DATA = ["meta", "matches", "stats", "table", "sources"];
 const state = {};
@@ -425,11 +425,25 @@ function renderTable() {
     <tbody>${body}</tbody></table></div>`;
 }
 
+/* Ile nieudanych prób z rzędu run.py uznaje za awarię, a nie mignięcie.
+   Ta sama liczba stoi w FAILURES_BEFORE_ALERT. */
+const BROKEN_AFTER = 3;
+
+/* "⚠️×114" mówiło tylko tyle, ile razy coś nie wyszło - liczba rosła co
+   dziesięć minut i nie znaczyła nic poza tym, że rośnie. Od kiedy nie działa,
+   widać w kolumnie obok, więc tutaj wystarczy powiedzieć, że nie działa. */
+function sourceWarning(source) {
+  if (!source.failures) return "";
+  return source.failures >= BROKEN_AFTER
+    ? ' <span class="warn">nie działa</span>'
+    : ' <span class="warn blip">⚠️</span>';
+}
+
 function renderSources() {
   const body = state.sources
     .map(
       (s) => `<tr>
-        <td class="name">${esc(s.source)}${s.failures ? ` ⚠️×${s.failures}` : ""}</td>
+        <td class="name">${esc(s.source)}${sourceWarning(s)}</td>
         <td class="num">${s.matches}</td>
         <td class="num">${esc(s.last ? s.last.slice(5, 16).replace("T", " ") : "–")}</td>
       </tr>`

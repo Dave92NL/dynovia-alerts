@@ -145,6 +145,50 @@ def test_a_source_never_fetched_is_always_due():
     assert run.is_due(None, [match()], KICKOFF) is True
 
 
+def test_a_blip_is_retried_at_the_normal_speed():
+    # Two failures in a row is not a broken source, and the alert does not
+    # fire there either. Backing off that early would slow down a source that
+    # simply lost one request.
+    assert run.backoff(0) == dt.timedelta(0)
+    assert run.backoff(2) == dt.timedelta(0)
+    just_failed = KICKOFF + dt.timedelta(hours=1)
+    assert (
+        run.is_due(None, [match()], just_failed, failures=2, attempted=just_failed)
+        is True
+    )
+
+
+def test_a_broken_source_is_backed_off_and_capped():
+    assert run.backoff(3) == dt.timedelta(hours=1)
+    assert run.backoff(4) == dt.timedelta(hours=2)
+    assert run.backoff(5) == dt.timedelta(hours=4)
+    # Capped, and the exponent is clamped before the multiplication so a
+    # counter that ran to three digits does not build 2**114 on the way.
+    assert run.backoff(6) == run.BACKOFF_MAX
+    assert run.backoff(114) == run.BACKOFF_MAX
+
+
+def test_a_broken_source_waits_measured_from_its_last_attempt():
+    """The bug this closes: last_fetch only moves on success, so a source that
+    only fails stays due on every single tick for ever."""
+    tried = KICKOFF + dt.timedelta(hours=1)
+    played = [match()]
+    # Ten minutes later - the next tick - it is not due despite never having
+    # fetched anything, which is exactly when the old code hit it again.
+    soon = tried + dt.timedelta(minutes=10)
+    assert run.is_due(None, played, soon, failures=114, attempted=tried) is False
+    # Once the wait is served it goes again, so a source that recovers is
+    # picked up the same day.
+    later = tried + run.BACKOFF_MAX
+    assert run.is_due(None, played, later, failures=114, attempted=tried) is True
+
+
+def test_a_source_with_no_recorded_attempt_is_not_held_back():
+    # Databases written before this existed have no attempt key. One request
+    # settles that; refusing to run would silence the source for ever.
+    assert run.is_due(None, [match()], KICKOFF, failures=114, attempted=None) is True
+
+
 # --- gole i protokół po gwizdku -------------------------------------------
 
 

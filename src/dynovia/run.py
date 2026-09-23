@@ -59,7 +59,51 @@ def poll_interval(matches, now: dt.datetime) -> dt.timedelta:
     return interval
 
 
-def is_due(last: dt.datetime | None, matches, now: dt.datetime) -> bool:
+FAILURES_BEFORE_ALERT = 3
+"""A source blips. Three runs in a row is a source that is actually broken."""
+
+BACKOFF_BASE = dt.timedelta(hours=1)
+BACKOFF_MAX = dt.timedelta(hours=6)
+
+
+def backoff(failures: int) -> dt.timedelta:
+    """How long a source that keeps failing is left alone before the next try.
+
+    last_fetch is derived from the newest row a source actually stored, so a
+    source that only ever fails never moves its own clock: it stays due on
+    every tick for ever. regiowyniki collected over a hundred failures exactly
+    that way - one every ten minutes, against a site that had started
+    answering 403.
+
+    The polling bands above already say these are small sites that must not be
+    hit 144 times a day to learn nothing. This says the same about the failure
+    path, which was quietly exempt from it.
+
+    Doubling starts only once a source is broken rather than blipping - the
+    same threshold the alert uses - and stops at six hours, so a source that
+    comes back is picked up the same day while a dead one costs four requests
+    instead of a hundred and forty.
+    """
+    if failures < FAILURES_BEFORE_ALERT:
+        return dt.timedelta(0)
+    # The exponent is clamped, not the product: 2**114 is a number no cap
+    # should have to be multiplied by first.
+    return min(BACKOFF_BASE * 2 ** min(failures - FAILURES_BEFORE_ALERT, 16), BACKOFF_MAX)
+
+
+def is_due(
+    last: dt.datetime | None,
+    matches,
+    now: dt.datetime,
+    *,
+    failures: int = 0,
+    attempted: dt.datetime | None = None,
+) -> bool:
+    # Measured from the last attempt, not the last success: the whole point is
+    # that a broken source has no successes to measure from.
+    wait = backoff(failures)
+    if wait and attempted is not None and now - attempted < wait:
+        return False
     if last is None:
         return True
     interval = poll_interval(matches, now)
@@ -72,8 +116,17 @@ def is_due(last: dt.datetime | None, matches, now: dt.datetime) -> bool:
     return local.hour >= 6 and last_local.date() < local.date()
 
 
-FAILURES_BEFORE_ALERT = 3
-"""A source blips. Three runs in a row is a source that is actually broken."""
+def _last_attempt(conn, name: str) -> dt.datetime | None:
+    raw = db.get_setting(conn, f"attempt:{name}")
+    if not raw:
+        return None
+    try:
+        return dt.datetime.fromisoformat(raw)
+    except ValueError:
+        # A key written by some older shape of this. Treating it as "never
+        # tried" costs one request; refusing to run costs the whole source.
+        log.warning("attempt:%s nie da sie odczytac jako daty: %r", name, raw)
+        return None
 
 
 def _note_failure(conn, name: str, *, quiet: bool) -> None:
@@ -102,12 +155,23 @@ def collect(conn, now: dt.datetime, *, offline: bool, quiet: bool = False) -> li
         known = db.stored_matches(conn)
         scraper = scraper_cls(seen=db.seen_articles(conn, name))
         try:
+            failures = int(db.get_setting(conn, f"failures:{name}") or 0)
             if offline:
                 result = scraper.parse(load_fixtures(name))
-            elif not is_due(db.last_fetch(conn, name), known.values(), now):
+            elif not is_due(
+                db.last_fetch(conn, name),
+                known.values(),
+                now,
+                failures=failures,
+                attempted=_last_attempt(conn, name),
+            ):
                 log.info("%s: not due yet", name)
                 continue
             else:
+                # Written before the request, so a failure moves the clock too.
+                # Recording it afterwards would leave the backoff resting on
+                # successes again, which is the bug being fixed.
+                db.set_setting(conn, f"attempt:{name}", now.isoformat())
                 result = scraper.fetch()
         except Exception:  # noqa: BLE001 - one dead source must not kill the run
             log.exception("%s: scrape failed", name)

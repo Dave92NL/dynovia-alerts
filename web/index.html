@@ -282,6 +282,12 @@
   @media (prefers-reduced-motion: reduce) { .update-banner { animation: none; } }
 
   .done { color: var(--success); font-weight: 650; }
+  .warn {
+    display: inline-block; font-size: 10px; letter-spacing: .3px; font-weight: 750;
+    text-transform: uppercase; color: #a72c3d; background: #fbeef0;
+    padding: 2px 6px; border-radius: 6px; vertical-align: 1px;
+  }
+  .warn.blip { background: none; padding: 0; }
   .ver { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
   .ver b { color: var(--ink); }
   #refreshOut { color: var(--muted); font-size: 12px; text-align: center; padding-top: 8px; }

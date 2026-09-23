@@ -91,6 +91,18 @@ test("a substitution sequence is one minute, not a pair of players", () => {
   assert.match(html, /\.seq \{/);
 });
 
+test("a broken source says it is broken, not how many times it failed", () => {
+  // The cell used to interpolate the retry counter straight into itself. That
+  // count only grew because the retries only kept coming, and since when is
+  // already in the column beside it. Asserted on the call rather than on the
+  // absence of the old string, which also lives in the comment explaining it.
+  assert.match(app, /\$\{sourceWarning\(s\)\}/);
+  assert.match(app, /nie działa/);
+  // A blip is not a breakage - the same threshold run.py alerts on.
+  assert.match(app, /const BROKEN_AFTER = 3;/);
+  assert.match(html, /\.warn \{/);
+});
+
 test("the app can tell it is out of date and says so at the top", () => {
   // A plain integer, because the comparison has to be "newer than" and not
   // "different from": meta.json trails a deploy by a workflow tick.

@@ -40,5 +40,6 @@ test("a result opens the match behind it", () => {
 test("an own goal is shown for the team it counted for, and marked", () => {
   // It reads as a goal by an opponent otherwise, on our side of the timeline.
   assert.match(app, /ownGoals/);
-  assert.match(app, /\(sam\.\)/);
+  // The red ball, not the plain one that every other goal on the timeline has.
+  assert.match(app, /mark: "🔴"/);
 });

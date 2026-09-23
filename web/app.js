@@ -161,10 +161,11 @@ function timeline(match) {
     ...match.scorers.map((g) => ({ minute: g.minute, mark: "⚽", who: g.player, ours: true })),
     ...match.theirGoals.map((g) => ({ minute: g.minute, mark: "⚽", who: g.player, ours: false })),
     // Counted for one team, kicked by the other. Shown on the side it counted
-    // for, named after whoever put it in, and marked - otherwise it reads as
-    // a goal by a player who plays for the other lot.
+    // for and named after whoever put it in, with the red ball football has
+    // used for this for ever - otherwise it reads as a goal by a player who
+    // plays for the other lot.
     ...match.ownGoals.map((g) => ({
-      minute: g.minute, mark: "⚽", who: `${g.player} (sam.)`, ours: g.ours,
+      minute: g.minute, mark: "🔴", who: g.player, ours: g.ours,
     })),
     ...match.cards.map((c) => ({
       minute: c.minute, mark: CARD_MARK[c.color] || "🟨", who: c.name, ours: c.ours,

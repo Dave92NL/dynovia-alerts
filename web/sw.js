@@ -47,7 +47,11 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.includes("/data/")) {
     event.respondWith(
-      fetch(event.request)
+      // no-store, or "network first" is only a wish: a plain fetch may be
+      // answered from the browser's own HTTP cache and hand back the scores
+      // this strategy exists to avoid. Caught locally, where the page kept
+      // rendering a match the exported file had already corrected.
+      fetch(event.request, { cache: "no-store" })
         .then((response) => {
           const copy = response.clone();
           caches.open(DATA).then((cache) => cache.put(event.request, copy));

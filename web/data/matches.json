@@ -1458,7 +1458,13 @@
     "started": false
    }
   ],
-  "ownGoals": [],
+  "ownGoals": [
+   {
+    "minute": 82,
+    "ours": true,
+    "player": "Kamil Papak"
+   }
+  ],
   "round": 5,
   "scorers": [
    {
@@ -1487,10 +1493,6 @@
    {
     "minute": 35,
     "player": "Kazimierz Leja"
-   },
-   {
-    "minute": 82,
-    "player": "Kamil Papak"
    }
   ],
   "time": "16:30"

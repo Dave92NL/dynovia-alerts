@@ -65,7 +65,11 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.open(SHELL).then(async (cache) => {
       const hit = await cache.match(event.request);
-      const fresh = fetch(event.request)
+      // Same reason the data branch above passes no-store: without this the
+      // revalidation can be answered from the browser's own HTTP cache and
+      // put back the very file it exists to replace. "reload" rather than
+      // "no-store" because the response is meant to land in the cache.
+      const fresh = fetch(event.request, { cache: "reload" })
         .then((response) => {
           if (response.ok) cache.put(event.request, response.clone());
           return response;

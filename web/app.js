@@ -412,8 +412,75 @@ function renderSources() {
     <thead><tr><th class="name">Źródło</th><th class="num">Mecze</th><th class="num">Ostatnio</th></tr></thead>
     <tbody>${body}</tbody></table></div>
     <div class="card" id="pushCard"></div>
-    ${protocolHelp()}`;
+    ${protocolHelp()}
+    ${updateCard()}`;
   renderPush();
+  $("refreshApp").addEventListener("click", refreshApp);
+}
+
+/* --- ręczna aktualizacja -------------------------------------------------- */
+
+/* sw.js serves the shell stale-while-revalidate, so the first open after a
+   deploy still gets the old version and the new one arrives in the background
+   for the open after that. That is the right trade most of the time - the app
+   opens instantly and works with no signal - but while waiting on one specific
+   change it reads as a failed deploy. This button collapses the two opens
+   into one. */
+function updateCard() {
+  let refreshed = false;
+  try {
+    refreshed = sessionStorage.getItem("dynovia-refreshed") === "1";
+    sessionStorage.removeItem("dynovia-refreshed");
+  } catch {
+    // Private window or blocked site data. The confirmation is a nicety, not
+    // worth losing the card over.
+  }
+  return `<div class="card">
+    <span class="tag">Wersja aplikacji</span>
+    ${
+      refreshed
+        ? '<p class="done">✓ Pobrano najnowszą wersję.</p>'
+        : ""
+    }
+    <p>Aplikacja ładuje się z pamięci telefonu, żeby otwierała się od razu
+    i działała bez zasięgu. Nowa wersja wchodzi więc zwykle dopiero za drugim
+    otwarciem. Tym przyciskiem pobierzesz ją natychmiast.</p>
+    <button class="push" id="refreshApp">Zaktualizuj aplikację</button>
+    <div id="refreshOut"></div>
+  </div>`;
+}
+
+async function refreshApp() {
+  const button = $("refreshApp");
+  const out = $("refreshOut");
+  button.disabled = true;
+  out.textContent = "Pobieram najnowszą wersję…";
+  try {
+    // The shell lives in the service worker's cache: drop it and the next
+    // load has to go to the network. The cache name belongs to sw.js and can
+    // be bumped there, so this matches the prefix rather than repeating one
+    // exact name that would quietly stop matching.
+    const names = await caches.keys();
+    await Promise.all(
+      names.filter((n) => n.startsWith("dynovia-shell")).map((n) => caches.delete(n))
+    );
+    // sw.js itself may have changed too, and without this the old worker
+    // stays in charge until some later navigation.
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration) await registration.update();
+  } catch (err) {
+    // No Cache API, a private window, blocked site data. Reloading is still
+    // better than doing nothing, so this reports and carries on.
+    console.warn("shell cache could not be cleared", err);
+  }
+  try {
+    sessionStorage.setItem("dynovia-refreshed", "1");
+  } catch {
+    // No confirmation after the reload, but the update itself still happens.
+  }
+  // location.reload(true) has been a no-op in every browser for years - it is
+  // the emptied shell cache that forces the network here, not a flag.
+  location.reload();
 }
 
 /* Protokołu PZPN nie da się pobrać - patrz protokol.py - ale Safari potrafi

@@ -1,0 +1,48 @@
+name: ci
+
+# Testy frontendu leżały w repo nieuruchamiane przez nic i przeżyły w tym
+# stanie commit, który je zepsuł: asercje wskazywały na listę "Przebieg",
+# usuniętą razem z nią. Test, którego nikt nie odpala, jest notatką, nie
+# testem.
+on:
+  push:
+    # Workflow scrape dokłada commit z danymi co dziesięć minut. Bez tego
+    # filtra CI chodziłoby ponad sto razy dziennie, żeby za każdym razem
+    # sprawdzić kod, którego nikt nie tknął.
+    paths-ignore:
+      - "data/**"
+      - "web/data/**"
+  pull_request:
+  workflow_dispatch:
+
+# Kolejny push na tę samą gałąź unieważnia poprzedni przebieg: liczy się
+# wynik dla ostatniego commita, nie historia prób.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -e ".[dev]"
+
+      - name: pytest
+        run: python -m pytest -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Wbudowany runner node:test - żadnych zależności, bo te testy czytają
+      # pliki web/ jako tekst i nie potrzebują ani przeglądarki, ani bundlera.
+      - name: testy frontendu
+        run: node --test tests/*.test.js

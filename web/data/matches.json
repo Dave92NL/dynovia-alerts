@@ -3,142 +3,280 @@
   "atHome": true,
   "away": "KS Dąbrówki",
   "awayScore": 1,
-  "cards": [],
+  "cards": [
+   {
+    "color": "yellow",
+    "minute": 86,
+    "name": "Kamil Socha",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 89,
+    "name": "Przemysław Barnaś",
+    "ours": true
+   }
+  ],
   "competition": "Klasa A",
   "date": "2026-08-16",
   "home": "Dynovia Dynów",
   "homeScore": 1,
   "lineup": [
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 69,
+    "minutes": true,
     "name": "Arkadiusz Kłoda",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 79,
+    "minutes": true,
     "name": "Filip Goleś",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Grzegorz Szczepański",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 70,
+    "minutes": true,
     "name": "Jakub Uryć",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Krystian Skubisz",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Michael Londono Silva",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 70,
+    "minutes": true,
     "name": "Paweł Szczawiński",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Ruslan Kovtok",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 62,
+    "minutes": true,
     "name": "Sylwester Paszko",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Tomasz Bielaszka",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Łukasz Kozioł",
     "ours": true,
     "started": true
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 79,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Jakob Dzik",
     "ours": true,
     "started": false
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 69,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Jakub Bury",
     "ours": true,
     "started": false
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 70,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Kamil Socha",
     "ours": true,
     "started": false
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 62,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Przemysław Barnaś",
     "ours": true,
     "started": false
    },
    {
-    "minuteIn": null,
-    "minuteOut": null,
-    "minutes": false,
+    "minuteIn": 70,
+    "minuteOut": 90,
+    "minutes": true,
     "name": "Sebastian Kustra",
     "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Grzegorz Jurek",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Grzegorz Sobuś",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Kacper Tarnawski",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Kamil Konopa",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Marcin Gwizdak",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Marcin Janda",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Michał Syrda",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 66,
+    "minutes": true,
+    "name": "Piotr Sobuś",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 59,
+    "minutes": true,
+    "name": "Rafał Styrnik",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Wojciech Wawrykowicz",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Łukasz Kraska",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 59,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Dominik Baran",
+    "ours": false,
+    "started": false
+   },
+   {
+    "minuteIn": 66,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Tomasz Chmiel",
+    "ours": false,
+    "started": false
+   },
+   {
+    "minuteIn": 90,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Dawid Majchrowski",
+    "ours": false,
     "started": false
    }
   ],
   "round": 1,
   "scorers": [
    {
-    "minute": null,
+    "minute": 17,
     "player": "Ruslan Kovtok"
    }
   ],
   "status": "finished",
-  "theirGoals": [],
+  "theirGoals": [
+   {
+    "minute": 12,
+    "player": "Piotr Sobuś"
+   }
+  ],
   "time": "17:00"
  },
  {

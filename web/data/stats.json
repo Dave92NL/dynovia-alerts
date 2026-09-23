@@ -2,7 +2,7 @@
  {
   "assists": 0,
   "goals": 4,
-  "minutes": 175,
+  "minutes": 244,
   "name": "Arkadiusz Kłoda",
   "played": 5,
   "red": 0,
@@ -11,7 +11,7 @@
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 237,
+  "minutes": 316,
   "name": "Filip Goleś",
   "played": 5,
   "red": 0,
@@ -20,7 +20,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 270,
+  "minutes": 360,
   "name": "Grzegorz Szczepański",
   "played": 5,
   "red": 0,
@@ -29,16 +29,16 @@
  {
   "assists": 0,
   "goals": 2,
-  "minutes": 125,
+  "minutes": 145,
   "name": "Kamil Socha",
   "played": 5,
   "red": 0,
-  "yellow": 0
+  "yellow": 1
  },
  {
   "assists": 0,
   "goals": 1,
-  "minutes": 180,
+  "minutes": 270,
   "name": "Krystian Skubisz",
   "played": 5,
   "red": 0,
@@ -47,7 +47,16 @@
  {
   "assists": 0,
   "goals": 1,
-  "minutes": 148,
+  "minutes": 360,
+  "name": "Michael Londono Silva",
+  "played": 5,
+  "red": 0,
+  "yellow": 0
+ },
+ {
+  "assists": 0,
+  "goals": 1,
+  "minutes": 218,
   "name": "Paweł Szczawiński",
   "played": 5,
   "red": 0,
@@ -56,7 +65,7 @@
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 255,
+  "minutes": 345,
   "name": "Ruslan Kovtok",
   "played": 5,
   "red": 0,
@@ -65,7 +74,7 @@
  {
   "assists": 0,
   "goals": 6,
-  "minutes": 230,
+  "minutes": 292,
   "name": "Sylwester Paszko",
   "played": 5,
   "red": 0,
@@ -74,7 +83,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 270,
+  "minutes": 360,
   "name": "Tomasz Bielaszka",
   "played": 5,
   "red": 0,
@@ -83,7 +92,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 270,
+  "minutes": 360,
   "name": "Łukasz Kozioł",
   "played": 5,
   "red": 0,
@@ -92,7 +101,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 100,
+  "minutes": 111,
   "name": "Jakob Dzik",
   "played": 4,
   "red": 0,
@@ -101,7 +110,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 105,
+  "minutes": 175,
   "name": "Jakub Uryć",
   "played": 4,
   "red": 0,
@@ -109,21 +118,12 @@
  },
  {
   "assists": 0,
-  "goals": 1,
-  "minutes": 270,
-  "name": "Michael Londono Silva",
-  "played": 4,
-  "red": 0,
-  "yellow": 0
- },
- {
-  "assists": 0,
   "goals": 0,
-  "minutes": 90,
+  "minutes": 118,
   "name": "Przemysław Barnaś",
   "played": 4,
   "red": 0,
-  "yellow": 0
+  "yellow": 1
  },
  {
   "assists": 0,
@@ -137,7 +137,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 35,
+  "minutes": 56,
   "name": "Jakub Bury",
   "played": 2,
   "red": 0,
@@ -155,7 +155,7 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 0,
+  "minutes": 20,
   "name": "Sebastian Kustra",
   "played": 2,
   "red": 0,

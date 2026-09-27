@@ -1794,17 +1794,303 @@
   "atHome": false,
   "away": "Dynovia Dynów",
   "awayScore": 1,
-  "cards": [],
+  "cards": [
+   {
+    "color": "yellow",
+    "minute": 40,
+    "name": "Sylwester Paszko",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 40,
+    "name": "Wiktor Jagieła",
+    "ours": false
+   },
+   {
+    "color": "yellow",
+    "minute": 44,
+    "name": "Arkadiusz Kłoda",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 63,
+    "name": "Jakub Uryć",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 74,
+    "name": "Wojciech Czerwonka",
+    "ours": false
+   },
+   {
+    "color": "yellow",
+    "minute": 90,
+    "name": "Grzegorz Szczepański",
+    "ours": true
+   },
+   {
+    "color": "yellow",
+    "minute": 90,
+    "name": "Mateusz Wilk",
+    "ours": false
+   },
+   {
+    "color": "yellow",
+    "minute": 90,
+    "name": "Mateusz Świeboda",
+    "ours": false
+   },
+   {
+    "color": "yellow",
+    "minute": 90,
+    "name": "Łukasz Kozioł",
+    "ours": true
+   }
+  ],
   "competition": "Klasa A",
   "date": "2026-09-27",
   "home": "Astra Medynia Głogowska",
   "homeScore": 2,
-  "lineup": [],
+  "lineup": [
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Arkadiusz Kłoda",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Filip Goleś",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Grzegorz Szczepański",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 80,
+    "minutes": true,
+    "name": "Jakub Uryć",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Krystian Skubisz",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Michael Londono Silva",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Przemysław Barnaś",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Ruslan Kovtok",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 70,
+    "minutes": true,
+    "name": "Sylwester Paszko",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Tomasz Bielaszka",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Łukasz Kozioł",
+    "ours": true,
+    "started": true
+   },
+   {
+    "minuteIn": 70,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Kamil Socha",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": 80,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Karol Stankiewicz",
+    "ours": true,
+    "started": false
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 87,
+    "minutes": true,
+    "name": "Abdelghafour Eymen Mamouni",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 65,
+    "minutes": true,
+    "name": "Bartłomiej Leś",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Grzegorz Bułaś",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Mateusz Wilk",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Mateusz Świeboda",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Sławomir Wilczak",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 23,
+    "minutes": true,
+    "name": "Sławomir Świst",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Vitalii Liubinskyi",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Wiktor Dołęga",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Wojciech Czerwonka",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 0,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Yaroslav Piatkovskyi",
+    "ours": false,
+    "started": true
+   },
+   {
+    "minuteIn": 23,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Wiktor Jagieła",
+    "ours": false,
+    "started": false
+   },
+   {
+    "minuteIn": 65,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Dominik Biały",
+    "ours": false,
+    "started": false
+   },
+   {
+    "minuteIn": 87,
+    "minuteOut": 90,
+    "minutes": true,
+    "name": "Mateusz Dec",
+    "ours": false,
+    "started": false
+   }
+  ],
   "ownGoals": [],
   "round": 7,
-  "scorers": [],
+  "scorers": [
+   {
+    "minute": 29,
+    "player": "Sylwester Paszko"
+   }
+  ],
   "status": "finished",
-  "theirGoals": [],
+  "theirGoals": [
+   {
+    "minute": 36,
+    "player": "Wiktor Dołęga"
+   },
+   {
+    "minute": 71,
+    "player": "Abdelghafour Eymen Mamouni"
+   }
+  ],
   "time": "14:00"
  },
  {

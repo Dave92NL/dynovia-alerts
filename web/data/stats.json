@@ -2,45 +2,36 @@
  {
   "assists": 0,
   "goals": 4,
-  "minutes": 379,
+  "minutes": 469,
   "name": "Arkadiusz Kłoda",
-  "played": 6,
+  "played": 7,
   "red": 0,
-  "yellow": 0
+  "yellow": 1
  },
  {
   "assists": 0,
   "goals": 3,
-  "minutes": 446,
+  "minutes": 536,
   "name": "Filip Goleś",
-  "played": 6,
+  "played": 7,
   "red": 0,
   "yellow": 0
  },
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 540,
+  "minutes": 630,
   "name": "Grzegorz Szczepański",
-  "played": 6,
+  "played": 7,
   "red": 0,
-  "yellow": 1
+  "yellow": 2
  },
  {
   "assists": 0,
   "goals": 2,
-  "minutes": 199,
+  "minutes": 219,
   "name": "Kamil Socha",
-  "played": 6,
-  "red": 0,
-  "yellow": 1
- },
- {
-  "assists": 0,
-  "goals": 1,
-  "minutes": 450,
-  "name": "Krystian Skubisz",
-  "played": 6,
+  "played": 7,
   "red": 0,
   "yellow": 1
  },
@@ -48,10 +39,55 @@
   "assists": 0,
   "goals": 1,
   "minutes": 540,
+  "name": "Krystian Skubisz",
+  "played": 7,
+  "red": 0,
+  "yellow": 1
+ },
+ {
+  "assists": 0,
+  "goals": 1,
+  "minutes": 630,
   "name": "Michael Londono Silva",
-  "played": 6,
+  "played": 7,
   "red": 0,
   "yellow": 0
+ },
+ {
+  "assists": 0,
+  "goals": 3,
+  "minutes": 600,
+  "name": "Ruslan Kovtok",
+  "played": 7,
+  "red": 0,
+  "yellow": 1
+ },
+ {
+  "assists": 0,
+  "goals": 7,
+  "minutes": 518,
+  "name": "Sylwester Paszko",
+  "played": 7,
+  "red": 0,
+  "yellow": 3
+ },
+ {
+  "assists": 0,
+  "goals": 0,
+  "minutes": 630,
+  "name": "Tomasz Bielaszka",
+  "played": 7,
+  "red": 0,
+  "yellow": 0
+ },
+ {
+  "assists": 0,
+  "goals": 0,
+  "minutes": 625,
+  "name": "Łukasz Kozioł",
+  "played": 7,
+  "red": 0,
+  "yellow": 1
  },
  {
   "assists": 0,
@@ -64,39 +100,12 @@
  },
  {
   "assists": 0,
-  "goals": 3,
-  "minutes": 510,
-  "name": "Ruslan Kovtok",
+  "goals": 0,
+  "minutes": 262,
+  "name": "Przemysław Barnaś",
   "played": 6,
   "red": 0,
   "yellow": 1
- },
- {
-  "assists": 0,
-  "goals": 6,
-  "minutes": 448,
-  "name": "Sylwester Paszko",
-  "played": 6,
-  "red": 0,
-  "yellow": 2
- },
- {
-  "assists": 0,
-  "goals": 0,
-  "minutes": 540,
-  "name": "Tomasz Bielaszka",
-  "played": 6,
-  "red": 0,
-  "yellow": 0
- },
- {
-  "assists": 0,
-  "goals": 0,
-  "minutes": 535,
-  "name": "Łukasz Kozioł",
-  "played": 6,
-  "red": 0,
-  "yellow": 0
  },
  {
   "assists": 0,
@@ -110,8 +119,8 @@
  {
   "assists": 0,
   "goals": 0,
-  "minutes": 172,
-  "name": "Przemysław Barnaś",
+  "minutes": 280,
+  "name": "Jakub Uryć",
   "played": 5,
   "red": 0,
   "yellow": 1
@@ -120,17 +129,8 @@
   "assists": 0,
   "goals": 0,
   "minutes": 200,
-  "name": "Jakub Uryć",
-  "played": 4,
-  "red": 0,
-  "yellow": 0
- },
- {
-  "assists": 0,
-  "goals": 0,
-  "minutes": 190,
   "name": "Karol Stankiewicz",
-  "played": 4,
+  "played": 5,
   "red": 0,
   "yellow": 0
  },

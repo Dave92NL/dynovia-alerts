@@ -7,7 +7,7 @@
  },
  {
   "failures": 0,
-  "last": "2026-09-30T08:15:52.919048+00:00",
+  "last": "2026-09-30T10:56:15.992398+00:00",
   "matches": 7,
   "source": "futbolowo"
  },
@@ -24,7 +24,7 @@
   "source": "podkarpacielive"
  },
  {
-  "failures": 208,
+  "failures": 209,
   "last": "2026-09-21T04:43:25.312257+00:00",
   "matches": 27,
   "source": "regiowyniki"
